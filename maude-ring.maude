@@ -1,0 +1,476 @@
+load full-maude.maude
+load model-checker.maude 
+fmod RSIGNATURE is
+ inc FULL-MAUDE-SIGN .
+
+ op ring : -> @Attr@ [ctor] .
+ op cring : -> @Attr@ [ctor] .
+ op aring : -> @Attr@ [ctor] .
+endfm
+
+fmod META-RSIGN is
+ inc META-FULL-MAUDE-SIGN .
+
+ var SSDS : SubsortDeclSet .
+ var EqS : EquationSet .
+ var OPDS : OpDeclSet .
+ var MAS : MembAxSet .
+ var IL : ImportList .
+ var QIDL : QidList .
+ var HL : HookList .
+ var RlS : RuleSet .
+ var SS : SortSet .
+ var H : Header .
+ var I : Import .
+
+ op addExclusion : FModule -> FModule .
+ eq addExclusion(fmod H is IL sorts SS . SSDS
+ op 'sortToken : 'Qid -> '@SortToken@
+ [special(HL id-hook('Exclude, QIDL))] . OPDS MAS EqS endfm) = fmod H is IL sorts SS . SSDS
+ op 'sortToken : 'Qid -> '@SortToken@
+ [special(HL id-hook('Exclude, QIDL 'ring 'cring 'aring ))] . OPDS MAS EqS endfm .
+
+ op RGRAMMAR : -> FModule [memo] .
+ eq RGRAMMAR = addExclusion(addImports((including 'RSIGNATURE .), GRAMMAR)) .
+endfm
+
+fmod RING-BANNER is
+ pr STRING .
+ op ring-banner : -> String .
+ eq ring-banner = "Ring attributes available (October 25th, 2017)" .
+endfm
+
+fmod RING-TRANSFORMATION is
+ pr META-LEVEL .
+ pr RSIGNATURE .
+ pr UNIT .
+
+ sort setTermList .
+ subsort TermList < setTermList .
+ op emp : -> setTermList .
+ op _||_ : setTermList setTermList -> setTermList [assoc id: emp] .
+
+ vars QidS QidS' QidS'' : QidSet .
+ vars OPDS OPDS' : OpDeclSet .
+ var SSDS : SubsortDeclSet .
+ vars TL TL1 TL' : TermList .
+ var TLS : setTermList .
+ vars EqC EqC' : EqCondition .
+ vars QC QC' : Condition .
+ vars EqS EqS' : EquationSet .
+ vars H F F' : Header .
+ var MAS : MembAxSet .
+ var IL : ImportList .
+ var Cd : Condition .
+ var TpL : TypeList .
+ var RlS : RuleSet .
+ var AtS : AttrSet .
+ vars T T' : Term .
+ var SS : SortSet .
+ var E : Equation .
+ vars V V' : Variable .
+ var C : Constant .
+ var OP : OpDecl .
+ vars N N' : Nat .
+ var I : Import .
+ vars Tp Tp' : Type .
+ var R : Rule .
+ var Q : Qid .
+ var S : Sort .
+
+ op rt : Module -> Module .
+ op rt : Module OpDeclSet -> Module .
+
+ op rt-eq : EquationSet QidSet QidSet QidSet -> EquationSet .
+ op rt-eq-add : Equation QidSet QidSet QidSet -> EquationSet .
+ op rt-check : Equation QidSet -> Bool .
+ op rt-eq-gen : Term QidSet QidSet QidSet -> TermList .
+ op rt-eq-make :  setTermList Term AttrSet -> EquationSet .
+ op rt-eq-make : setTermList Term Condition AttrSet -> EquationSet .
+ op rt-eq-make1 : TermList Term AttrSet -> EquationSet .
+ op rt-eq-make1 : TermList Term Condition AttrSet -> EquationSet .
+
+ op rt-rl : RuleSet QidSet QidSet QidSet -> RuleSet .
+ op rt-rl-add : Rule QidSet QidSet QidSet -> RuleSet .
+ op rt-check : Rule QidSet -> Bool .
+ op rt-rl-gen : Term QidSet -> TermList .
+ op rt-rl-make :  setTermList Term AttrSet -> RuleSet .
+ op rt-rl-make : setTermList Term Condition AttrSet -> RuleSet .
+ op rt-rl-make1 : TermList Term AttrSet -> RuleSet .
+ op rt-rl-make1 : TermList Term Condition AttrSet -> RuleSet .
+
+ op eqQidList : QidSet QidSet -> Bool .
+ op rt-getOpSet : TermList -> QidSet .
+
+ op rt-getOpName : OpDeclSet -> QidSet .
+ op crt-getOpName : OpDeclSet -> QidSet .
+ op art-getOpName : OpDeclSet -> QidSet .
+
+ op rt-term : Qid Qid TermList -> TermList .
+ op rt-termList : TermList QidSet QidSet QidSet -> setTermList .
+ op mkSet : setTermList -> setTermList .
+
+ op rt-term-round : Qid Qid setTermList -> setTermList .
+ op rt-term-cround : Qid Qid setTermList -> setTermList .
+ op rt-term-around : Qid Qid setTermList -> setTermList .
+
+ op rt-round : TermList Nat Nat -> setTermList .
+ op rt-cround : TermList Nat Nat -> setTermList .
+ op rt-around : TermList Nat Nat -> setTermList .
+
+ op numElem :  TermList -> Nat .
+ op mkSet : setTermList -> setTermList .
+ op mkSet1 : Term setTermList -> setTermList .
+ op rt-getTermList : Qid TermList -> TermList .
+ op invert : TermList -> TermList .
+ 
+ op rt-addInvertEq : OpDeclSet TypeList -> EquationSet .
+ op rt-addInvertOp : OpDeclSet  -> OpDeclSet .
+ op getTypeList : OpDeclSet -> TypeList .
+ op addInvert : Qid TypeList -> EquationSet .
+ op addInvert1 : TypeList -> OpDeclSet .
+ op _in_ : Type TypeList -> Bool .
+ 
+ eq (Tp in (Tp' TpL)) = (Tp == Tp') or (Tp in TpL) .
+ eq (Tp in nil) = false .
+
+ eq getTypeList(op F : TpL -> Tp' [AtS] . OPDS) = if (metadata("ring") in (AtS)) or (metadata("aring") in (AtS)) then TpL getTypeList(OPDS) else getTypeList(OPDS) fi .
+ 
+ eq rt-addInvertEq(op F : Tp Tp -> Tp [AtS] . OPDS, TpL) = if ((Tp in TpL) and (ctor in AtS)) then addInvert(F, Tp) rt-addInvertEq(OPDS, TpL) else rt-addInvertEq(OPDS, TpL) fi .
+ eq rt-addInvertEq(OP OPDS, TpL) =  rt-addInvertEq(OPDS, TpL) [owise] .
+ eq rt-addInvertEq(none, TpL) = none .
+ 
+ *** eq addInvert(Q, Tp) =  (eq 'invert[Q[qid("F:" + string(Tp)), qid("F':" + string(Tp))]] = Q['invert[qid("F':" + string(Tp))], 'invert[qid("F:" + string(Tp))]] [none] .) (eq 'invert[qid("F:" + string(Tp))] = qid("F:" + string(Tp)) [owise] .) .
+
+ eq addInvert(Q, Tp) =  (eq 'invert[qid("F:" + string(Tp))] = qid("F:" + string(Tp)) [owise] .) .
+ 
+ eq rt-addInvertOp(op F : TpL -> Tp [AtS] . OPDS) = if (metadata("ring") in (AtS)) or (metadata("aring") in (AtS)) then addInvert1(TpL) rt-addInvertOp(OPDS) else rt-addInvertOp(OPDS) fi .
+ eq rt-addInvertOp(none) = none .
+ 
+ eq addInvert1(TpL) =  (op 'invert : TpL -> TpL [none] .)  .
+ eq addInvert1(nil) = none .
+
+ eq rt(mod H is IL sorts SS . SSDS OPDS MAS EqS RlS endm) = mod H is IL sorts SS . SSDS OPDS rt-addInvertOp(OPDS) MAS 
+    rt-addInvertEq(OPDS, getTypeList(OPDS)) rt-eq(EqS, rt-getOpName(OPDS), crt-getOpName(OPDS), art-getOpName(OPDS))
+    rt-rl(RlS, rt-getOpName(OPDS), crt-getOpName(OPDS), art-getOpName(OPDS))  endm .
+ eq rt(fmod H is IL sorts SS . SSDS OPDS MAS EqS endfm) = fmod H is IL sorts SS . SSDS OPDS rt-addInvertOp(OPDS) MAS
+    rt-addInvertEq(OPDS, getTypeList(OPDS)) rt-eq(EqS, rt-getOpName(OPDS), crt-getOpName(OPDS), art-getOpName(OPDS)) endfm .
+
+ eq rt(mod H is IL sorts SS . SSDS OPDS MAS EqS RlS endm, OPDS') = mod H is IL sorts SS . SSDS OPDS rt-addInvertOp(OPDS OPDS') MAS
+    rt-addInvertEq(OPDS OPDS', getTypeList(OPDS OPDS')) rt-eq(EqS, rt-getOpName(OPDS OPDS'), crt-getOpName(OPDS OPDS'), art-getOpName(OPDS OPDS'))
+    rt-rl(RlS, rt-getOpName(OPDS'), crt-getOpName(OPDS'), art-getOpName(OPDS')) endm .
+ eq rt(fmod H is IL sorts SS . SSDS OPDS MAS EqS endfm, OPDS') = fmod H is IL sorts SS . SSDS OPDS rt-addInvertOp(OPDS OPDS') MAS
+    rt-addInvertEq(OPDS OPDS', getTypeList(OPDS OPDS')) rt-eq(EqS, rt-getOpName(OPDS OPDS'), crt-getOpName(OPDS OPDS'), art-getOpName(OPDS OPDS')) endfm .
+
+ eq rt-eq(none, QidS, QidS', QidS'') = none .
+ eq rt-eq(E EqS, QidS, QidS', QidS'') = if rt-check(E, QidS ; QidS' ; QidS'')
+    then rt-eq-add(E, QidS, QidS', QidS'') rt-eq(EqS, QidS, QidS', QidS'')
+    else E rt-eq(EqS, QidS, QidS', QidS'') fi .
+
+ eq rt-check(eq T = T' [AtS] ., QidS) = eqQidList(rt-getOpSet(T), QidS) .
+ eq rt-check(ceq T = T' if EqC [AtS]., QidS) = eqQidList(rt-getOpSet(T), QidS) .
+
+ eq rt-rl(none, QidS, QidS', QidS'') = none .
+ eq rt-rl(R RlS, QidS, QidS', QidS'') = if rt-check(R, QidS ; QidS' ; QidS'')
+    then rt-rl-add(R, QidS, QidS', QidS'') rt-rl(RlS, QidS, QidS', QidS'')
+    else  R rt-rl(RlS, QidS, QidS', QidS'') fi .
+
+ eq rt-check(rl T => T' [AtS] ., QidS) = eqQidList(rt-getOpSet(T), QidS) .
+ eq rt-check(crl T => T' if Cd [AtS] ., QidS) = eqQidList(rt-getOpSet(T), QidS) .
+
+ eq rt-getOpSet(V) = none .
+ eq rt-getOpSet(C) = none .
+ eq rt-getOpSet(empty) = none .
+ eq rt-getOpSet(F[TL]) = F ; rt-getOpSet(TL) .
+ eq rt-getOpSet((T , TL')) = rt-getOpSet(T) ; rt-getOpSet(TL') .
+
+ op getInv : TermList -> TermList .
+ eq getInv(empty) = empty . 
+ eq getInv(C) = C .
+ eq getInv(V) = V .
+ eq getInv(inv(TL)) = TL .
+ eq getInv(F[TL]) = F[getInv(TL)] .
+ eq getInv((T, TL)) = getInv(T), getInv(TL) .
+
+ op checkIvn : TermList -> Bool .
+ eq checkIvn(empty) = false .
+ eq checkIvn(C) = false .
+ eq checkIvn(V) = false .
+ eq checkIvn(inv(TL)) = true .
+ eq checkIvn(F[TL]) = checkIvn(TL) .
+ eq checkIvn((T, TL)) = if checkIvn(T) then true else  checkIvn(TL) fi .
+
+ op setInver : TermList TermList -> TermList .
+ op setInver : EqCondition TermList -> EqCondition .
+ op setInver : Condition TermList -> Condition .
+ eq setInver(empty, TL) = empty .
+ eq setInver(C, TL) = C .
+ eq setInver(V, TL) = if in(V, TL) then 'invert[V] else V fi .
+ eq setInver(F[TL], TL') = F[setInver(TL, TL')] .
+ eq setInver((T, TL), TL') =  setInver(T, TL'), setInver(TL, TL') .
+
+ eq setInver(T = T', TL) =  setInver(T, TL) = setInver(T', TL) .
+ eq setInver(T := S, TL) =  setInver(T, TL) := S .
+ eq setInver(T => T', TL) =  setInver(T, TL) => setInver(T', TL) .
+ eq setInver(EqC /\ EqC', TL) =  setInver(EqC, TL) /\ setInver(EqC', TL) .
+ eq setInver(QC /\ QC', TL) =  setInver(QC, TL) /\ setInver(QC', TL) .
+
+ op getVarSet : TermList -> TermList .
+ op getVarSet1 : TermList -> TermList .
+ 
+ eq getVarSet(empty) =  empty .
+ eq getVarSet((V, TL)) = getVarSet(TL) .
+ eq getVarSet((C, TL)) = getVarSet(TL) .
+ eq getVarSet((F[TL], TL1)) =  getVarSet(TL) , getVarSet(TL1) .
+ eq getVarSet((inv(TL), TL1)) =  getVarSet1(TL) , getVarSet(TL1) .
+ *** eq getVarSet((T, TL)) =  getVarSet(T), getVarSet(TL) .
+
+ 
+ eq getVarSet1(empty) = empty .
+ eq getVarSet1((V, TL)) = V, getVarSet1(TL) .
+ eq getVarSet1((C, TL)) = getVarSet1(TL) .
+ eq getVarSet1((F[TL], TL')) = getVarSet(TL), getVarSet1(TL') .
+
+ op in : Variable TermList -> Bool .
+ eq in(V, empty) = false .
+ eq in(V, (V', TL)) = if (V == V') then true else in(V, (TL)) fi .
+
+ eq rt-getOpName(op F : TpL -> Tp [AtS] . OPDS) = if (metadata("ring") in (AtS)) then
+    F ; rt-getOpName(OPDS) else rt-getOpName(OPDS) fi .
+ eq rt-getOpName(none) = none .
+ eq crt-getOpName(op F : TpL -> Tp [AtS] . OPDS) = if (metadata("cring") in (AtS)) then
+    F ; crt-getOpName(OPDS) else crt-getOpName(OPDS) fi .
+ eq crt-getOpName(none) = none .
+ eq art-getOpName(op F : TpL -> Tp [AtS] . OPDS) = if (metadata("aring") in (AtS)) then
+    F ; art-getOpName(OPDS) else art-getOpName(OPDS) fi .
+ eq art-getOpName(none) = none .
+
+ eq eqQidList(Q ; QidS, QidS') = (Q in QidS') or eqQidList(QidS, QidS') .
+ eq eqQidList(none, QidS') = false .
+
+ eq rt-eq-add(eq T = T' [AtS] ., QidS, QidS', QidS'') = rt-eq-make(rt-eq-gen(T, QidS, QidS', QidS''), T', AtS) .
+ eq rt-eq-add(ceq T = T' if EqC [AtS]., QidS, QidS', QidS'') = rt-eq-make(rt-eq-gen(T, QidS, QidS', QidS''), T', EqC, AtS) .
+
+ eq rt-rl-add(rl T => T' [AtS] ., QidS, QidS', QidS'') = rt-rl-make(rt-eq-gen(T, QidS, QidS', QidS''), T', AtS) .
+ eq rt-rl-add(crl T => T' if Cd [AtS] ., QidS, QidS', QidS'') = rt-rl-make(rt-eq-gen(T, QidS, QidS', QidS''), T', Cd, AtS) .
+
+ eq rt-eq-make(emp, T', AtS) = none .
+ eq rt-eq-make((empty || TLS), T', AtS) = none .
+ eq rt-eq-make((TL || TLS), T', AtS) =  rt-eq-make1(TL, T', AtS) rt-eq-make(TLS, T', AtS) .
+
+ eq rt-eq-make(emp, T', EqC, AtS) = none .
+ eq rt-eq-make((empty || TLS), T', EqC, AtS) = none .
+ eq rt-eq-make((TL || TLS), T', EqC, AtS) =  rt-eq-make1(TL, T', EqC, AtS) rt-eq-make(TLS, T', EqC, AtS) .
+
+ eq rt-eq-make1(nil, T', AtS) = none .
+ eq rt-eq-make1((T, TL), T', AtS) = if checkIvn(T) then eq getInv(T) = setInver(T', getVarSet(T)) [AtS] . rt-eq-make(TL, T', AtS) else eq T = T' [AtS] . rt-eq-make(TL, T', AtS) fi .
+ 
+ eq rt-eq-make1(nil, T', EqC, AtS) = none .
+ eq rt-eq-make1((T, TL), T', EqC, AtS) = if checkIvn(T) then ceq getInv(T) = setInver(T', getVarSet(T)) if setInver(EqC, getVarSet(T)) [AtS] . rt-eq-make(TL, T', EqC, AtS) else ceq T = T' if EqC [AtS] . rt-eq-make(TL, T', EqC, AtS) fi .
+
+ eq rt-rl-make(emp, T', AtS) = none .
+ eq rt-rl-make((empty || TLS), T', AtS) = none .
+ eq rt-rl-make((TL || TLS), T', AtS) =  rt-rl-make1(TL, T', AtS) rt-rl-make(TLS, T', AtS) .
+
+ eq rt-rl-make(emp, T', Cd, AtS) = none .
+ eq rt-rl-make((empty || TLS), T', Cd, AtS) = none .
+ eq rt-rl-make((TL || TLS), T', Cd, AtS) =  rt-rl-make1(TL, T', Cd, AtS) rt-rl-make(TLS, T', Cd, AtS) .
+
+ eq rt-rl-make1(nil, T', Cd, AtS) = none .
+ eq rt-rl-make1((T, TL), T', Cd, AtS) =  if checkIvn(T) then  crl getInv(T) => setInver(T', getVarSet(T)) if setInver(Cd, getVarSet(T)) [AtS] . rt-rl-make(TL, T', Cd, AtS) else crl T => T'  if Cd [AtS] . rt-rl-make(TL, T', Cd, AtS) fi .
+
+ eq rt-rl-make1(nil, T', AtS) = none .
+ eq rt-rl-make1((T, TL), T', AtS) = if checkIvn(T) then rl getInv(T) => setInver(T', getVarSet(T)) [AtS] . rt-rl-make(TL, T', AtS) else  rl T => T' [AtS] . rt-rl-make(TL, T', AtS) fi .
+
+ eq rt-eq-gen(V, QidS, QidS', QidS'') = V .
+ eq rt-eq-gen(C, QidS, QidS', QidS'') = C .
+ ceq rt-eq-gen(F'[F[TL]], QidS, QidS', QidS'') =  rt-term-round(F', F, mkSet(rt-termList(rt-getTermList(F, TL), QidS, QidS', QidS''))) if (F' in QidS) .
+ ceq rt-eq-gen(F'[F[TL]], QidS, QidS', QidS'') =  rt-term-cround(F', F, mkSet(rt-termList(rt-getTermList(F, TL), QidS, QidS', QidS''))) if (F' in QidS') .
+ ceq rt-eq-gen(F'[F[TL]], QidS, QidS', QidS'') =  rt-term-around(F', F, mkSet(rt-termList(rt-getTermList(F, TL), QidS, QidS', QidS''))) if (F' in QidS'') .
+ eq rt-eq-gen(F[TL],  QidS, QidS', QidS'') =  rt-term(none, F, mkSet(rt-termList(TL, QidS, QidS', QidS''))) [owise] .
+
+ eq rt-getTermList(F, (V, F[TL])) = V , rt-getTermList(F, TL) .
+ eq rt-getTermList(F, (C, F[TL])) = C , rt-getTermList(F, TL) .
+ eq rt-getTermList(F, (F'[TL], F[TL'])) = if (F == F') then rt-getTermList(F, TL) , rt-getTermList(F, TL')
+    else F'[TL] , rt-getTermList(F, TL') fi .
+ eq rt-getTermList(F, (F[TL], V)) = V , rt-getTermList(F, TL) .
+ eq rt-getTermList(F, (F[TL], C)) = C , rt-getTermList(F, TL) .
+ eq rt-getTermList(F, (F[TL], F'[TL'])) = if (F == F') then rt-getTermList(F, TL) , rt-getTermList(F, TL')
+    else rt-getTermList(F, TL'), F'[TL'] fi .
+ eq rt-getTermList(F, TL) = TL [owise] .
+
+ eq mkSet((T, TL) || emp) = T || mkSet(TL || emp) .
+ eq mkSet((T, TL) || TLS) = mkSet1(T, mkSet(TLS)) || mkSet(TL || TLS) [owise] .
+ eq mkSet(empty || TLS) = emp  .
+
+ eq mkSet1(T, (TL || TLS)) = (T, TL) || mkSet1(T, TLS) .
+ eq mkSet1(T, emp) = emp .
+
+ eq rt-term(none, F, TL || TLS) = F[TL] , rt-term(none, F, TLS) .
+ eq rt-term(F', F, TL || TLS) = F'[F[TL]] , rt-term(F', F, TLS) .
+ eq rt-term(F', F, emp) = empty .
+ eq rt-term(none, F, emp) = empty .
+
+ eq rt-term-round(F', F, TL || TLS) = rt-term(F', F, rt-round(TL, 1, numElem(TL))) || rt-term-round(F', F, TLS) .
+ eq rt-term-round(F', F, emp) = emp .
+
+ eq rt-term-cround(F', F, TL || TLS) = rt-term(F', F, rt-cround(TL, 1, numElem(TL))) || rt-term-cround(F', F, TLS) .
+ eq rt-term-cround(F', F, emp) = emp .
+
+ eq rt-term-around(F', F, TL || TLS) = rt-term(F', F, rt-around(TL, 1, numElem(TL))) || rt-term-around(F', F, TLS) .
+ eq rt-term-around(F', F, emp) = emp .
+
+ eq rt-termList(empty, QidS, QidS', QidS'') = emp .
+ eq rt-termList((T, TL), QidS, QidS', QidS'') = if eqQidList(rt-getOpSet(T), QidS ; QidS' ; QidS'')
+    then rt-eq-gen(T, QidS, QidS', QidS'') || rt-termList(TL, QidS, QidS', QidS'')
+    else T || rt-termList(TL, QidS, QidS', QidS'') fi  .
+
+ op rt-cround1 : TermList Nat Nat -> setTermList .
+ op inv : TermList -> Term [ctor] .
+ eq rt-cround((T, TL), N', N) = if N' < N then (T, TL) || rt-cround((TL , T), N' + 1, N) else  (T, TL) fi .
+ eq rt-around(TL, N', N) = rt-cround1(invert(TL), N', N) .
+ eq rt-round(TL, N', N) =  rt-cround(TL, N', N) || rt-around(TL, N', N).
+ eq rt-cround1((T, TL), N', N) = if N' < N then inv((T, TL)) || rt-cround1((TL , T), N' + 1, N) else  inv((T, TL)) fi .
+
+ eq invert(T) = T .
+ eq invert((T, TL)) = invert(TL), T .
+
+ eq numElem(empty) = 0 .
+ eq numElem((T, TL)) = 1 + numElem(TL) .
+endfm
+
+mod RING is
+ pr RING-TRANSFORMATION .
+ inc DATABASE-HANDLING .
+ inc META-RSIGN .
+
+ var  ME : ModuleExpression .
+ var  RDC : RDatabaseClass .
+ var  Atts : AttributeSet .
+ vars DB DB' DB'' DB''' : Database .
+ var  AtS : AttributeSet .
+ vars F F' Q : Qid .
+ vars T T' : Term .
+ vars M M' : Module .
+ var  O : Oid .
+ var  N : Nat .
+
+ sort RDatabaseClass .
+ subsort RDatabaseClass < DatabaseClass .
+
+ eq parseAttrs('ring.@Attr@) = metadata("ring") .
+ eq parsePreAttrs('ring.@Attr@, N) = metadata("ring") .
+ eq parseAttrs('cring.@Attr@) = metadata("cring") .
+ eq parsePreAttrs('cring.@Attr@, N) = metadata("cring") .
+ eq parseAttrs('aring.@Attr@) = metadata("aring") .
+ eq parsePreAttrs('aring.@Attr@, N) = metadata("aring") .
+
+ op RDatabase : -> RDatabaseClass [ctor] .
+ op ring-header : Term -> Term .
+ eq ring-header('fmod_is_endfm[T, T']) = 'rfmod_is_endfm[T, T'] .
+ eq ring-header('mod_is_endm[T, T']) = 'rmod_is_endm[T, T'] .
+ eq ring-header('omod_is_endom[T, T']) = 'romod_is_endom[T, T'] .
+ eq ring-header(T) = T [owise] .
+
+ op standard-header : Qid -> Qid .
+ eq standard-header('rfmod_is_endfm) = 'fmod_is_endfm .
+ eq standard-header('rmod_is_endm) = 'mod_is_endm .
+ eq standard-header('romod_is_endom) = 'omod_is_endom .
+ eq standard-header(F) = F [owise] .
+
+  crl [module] :
+       < O : RDC | db : DB, input : (F[T, T']), output : nil, default : ME, Atts >
+    => < O : RDC | db : DB2, *** Do something after procModule to add matching info
+                   input : nilTermList,
+                   output : ('Introduced 'module header2Qid(Q) '\n),
+                   default : parseHeader(T), Atts >
+     if F' := standard-header(F) /\
+        (F' == 'fmod_is_endfm) or-else
+        ((F' == 'obj_is_endo)  or-else
+        ((F' == 'obj_is_jbo)   or-else
+        ((F' == 'mod_is_endm)  or-else
+         (F' == 'omod_is_endom)))) /\
+        Q := parseHeader(T) /\
+        DB' := procModule(F'[T, T'], DB) /\
+	       DB1 := if compiledModule(Q, DB')
+               then DB'
+               else database(evalModExp(Q, DB'))
+               fi /\
+        M' := rt(getFlatModule(Q, DB1)) /\
+        M := rt(getTopModule(Q, DB1), getOps(M')) /\
+        M'' := rt(getInternalModule(Q, DB1), getOps(M')) /\
+        DB'' := insertTopModule(Q, M, DB1) /\
+        DB''' := insertFlatModule(Q, M', DB'') /\
+        DB2 := insertInternalModule(Q, M'', DB''') .
+
+var DB1 DB2 : Database .
+var M'' : Module .
+
+
+endm
+
+mod RING-INIT is
+ inc LOOP-MODE .
+ pr RING .
+ pr RING-BANNER .
+
+ var  X@Database : DatabaseClass .
+ vars QIL QIL' QIL'' : QidList .
+ var  Atts : AttributeSet .
+ vars RP RP' : ResultPair .
+ var  DB : Database .
+ var  T : Term .
+ var  QI : Qid .
+ var  N : Nat .
+ var  O : Oid .
+
+ op o : -> Oid [ctor] .
+
+ --- State for LOOP mode:
+ subsort Object < State .
+ op rinit : -> System .
+
+ op init-atts : -> AttributeSet .
+ eq init-atts = db : initialDatabase, default : 'CONVERSION .
+
+ rl [init] :
+    rinit
+ => [nil, < o : RDatabase | input : nilTermList, output : nil, init-atts >, ('\t string2qidList(ring-banner)'\n)] .
+
+ crl [rin-ok] :
+     [QIL, < O : X@Database | input : nilTermList, Atts >, QIL']
+  => [nil,
+      < O : X@Database | input : ring-header(T), Atts >,
+      QIL']
+  if QIL =/= nil /\
+     metaParse(RGRAMMAR, QIL, '@Input@) : ResultPair /\
+     T := getTerm(metaParse(RGRAMMAR, QIL, '@Input@)) .
+
+ crl [r-in-syntax-error] :
+     [QIL, < O : X@Database | output : nil, Atts >, QIL']
+  => [nil,
+      < O : X@Database | output : ('\r 'Warning: '\o
+                printSyntaxError(metaParse(RGRAMMAR, QIL, '@Input@), QIL)
+                '\n
+                '\r 'Error: '\o 'No 'parse 'for 'input. '\n), Atts >,
+      QIL']
+  if QIL =/= nil /\
+     noParse(N) := metaParse(RGRAMMAR, QIL, '@Input@)  .
+
+ crl [rin-ambiguous] :
+     [QIL, < O : X@Database | output : nil, Atts >, QIL']
+  => [nil,
+      < O : X@Database | output :  ('\r 'Error: '\o 'Ambiguous 'input. '\n), Atts >,
+      QIL']
+   if QIL =/= nil /\
+      ambiguity(RP, RP') := metaParse(RGRAMMAR, QIL, '@Input@)  .
+
+ rl [rout] :
+    [QIL, < O : X@Database | output : (QI QIL'), Atts >, QIL'']
+ => [QIL, < O : X@Database | output : nil, Atts >, (QIL'' QI QIL')] .
+endm
+
+
+loop rinit .
+
+
