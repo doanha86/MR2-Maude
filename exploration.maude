@@ -1,6 +1,6 @@
 
 ***
-*** Specification of Gatthering on Rings under the Look-Compute-Move Model Algorithm
+*** Specification of Exploration on Rings
 ***
 *** ---------------------  Basic Data Used-------------------------
 (fmod SEQUENCE {X :: TRIV, Y :: TRIV} is
@@ -312,11 +312,10 @@ endfm)
      eq transferS(< N, P > S) = (< N, P, 0, 0, 0 >) transferS(S) .
 
      op interdistance : Seq -> Nat .
-     op interdistance1 : Seq Nat Nat -> Nat .
-     eq interdistance(S) =  interdistance1(S, 0, 0) .
-     eq interdistance1(empS, N1, N2) = N2 .
-     eq interdistance1(< 0, P > S, N1 , N2)  = interdistance1(S, N1 + 1, N2) .
-     eq interdistance1(< N, P > S, N1 , N2)  = if (N2 == 0) then (if (N1 == 0) then interdistance1(S, 1, 0) else interdistance1(< N, P > S, N1, N1) fi) else (if (N1 < N2) then interdistance1(S, 1 , N1) else interdistance1(S, 1, N2) fi) fi [owise] .
+     op interdistance1 : Seq Nat Nat Nat Nat -> Nat .
+     eq interdistance(S) =  interdistance1(S, 0, 0, 1, numPairs(S)) .
+     eq interdistance1(< 0, P > S, N1, N2, N3, N4) = if (N3 == N4) then N2 else interdistance1(S < 0, P >, N1 + 1, N2, N3 + 1, N4) fi .
+     eq interdistance1(< N, P > S, N1, N2, N3, N4 ) = if (N3 == N4) then N2 else (if ((N1 < N2) or ((N2 == 0) and (N1 =/= 0))) then interdistance1(S < N, P > , 1, N1, N3 + 1, N4)  else interdistance1(S < N, P >, 1, N2, N3 + 1, N4) fi) fi [owise] .
 
      op interdistance2 : Ex-seq -> Nat .
      op interdistance21 : Ex-seq Nat Nat -> Nat .
@@ -369,7 +368,7 @@ endfm)
      eq maxiBlockE1((< 0, P, E1, E2, E3 >) EC, N1, N2, N3, N4) = if (N3 == N4) then N2 else maxiBlockE1(EC (< 0, P, E1, E2, E3 >), N1, N2, N3 + 1, N4) fi .
      eq maxiBlockE1((< 1, P, 1, E2, E3 >) EC, N1, N2, N3, N4) = if (N3 == N4) then N2 else maxiBlockE1(EC (< 1, P, 1, E2, E3 >), N1, N2, N3 + 1, N4) fi .
      eq maxiBlockE1((< 1, P, 2, E2, E3 >) EC, N1, N2, N3, N4) = if (N3 == N4) then N2 else maxiBlockE1(EC (< 1, P, 2, E2, E3 >), N1, N2, N3 + 1, N4) fi .
-     eq maxiBlockE1((< 1, P, 3, E2, E3 >) EC, N1, N2, N3, N4)  = if (N3 == N4) then N2 else (if ((distance((< 1, P, 3, E2, E3 >) EC, 1) == N1) and (sizeBlock((< 1, P, 3, E2, E3 >) EC, 1) > N2)  or (N2 == 1)) then maxiBlockE1(EC (< 1, P, 3, E2, E3 >), N1, sizeBlock((< 1, P, 3, E2, E3 >) EC, 0), N3 + 1, N4) else maxiBlockE1(EC (< 1, P, 3, E2, E3 >), N1, N2, N3 + 1, N4) fi) fi .
+     eq maxiBlockE1((< 1, P, 3, E2, E3 >) EC, N1, N2, N3, N4)  = if (N3 == N4) then N2 else (if ((distance((< 1, P, 3, E2, E3 >) EC, 1) == N1) and (sizeBlock((< 1, P, 3, E2, E3 >) EC, 0) > N2)  or (N2 == 1)) then maxiBlockE1(EC (< 1, P, 3, E2, E3 >), N1, sizeBlock((< 1, P, 3, E2, E3 >) EC, 0), N3 + 1, N4) else maxiBlockE1(EC (< 1, P, 3, E2, E3 >), N1, N2, N3 + 1, N4) fi) fi .
 
      op minBlock1 : Seq -> Nat .
      op minBlock2 : Ex-seq Nat -> Nat .
@@ -379,7 +378,43 @@ endfm)
      eq minBlockE1((< 0, P, E1, E2, E3 >) EC, N1, N2, N3, N4) = if (N3 == N4) then N2 else minBlockE1(EC (< 0, P, E1, E2, E3 >), N1, N2, N3 + 1, N4) fi .
      eq minBlockE1((< 1, P, 1, E2, E3 >) EC, N1, N2, N3, N4) = if (N3 == N4) then N2 else minBlockE1(EC (< 1, P, 1, E2, E3 >), N1, N2, N3 + 1, N4) fi .
      eq minBlockE1((< 1, P, 2, E2, E3 >) EC, N1, N2, N3, N4) = if (N3 == N4) then N2 else minBlockE1(EC (< 1, P, 2, E2, E3 >), N1, N2, N3 + 1, N4) fi .
-     eq minBlockE1((< 1, P, 3, E2, E3 >) EC, N1, N2, N3, N4)  = if (N3 == N4) then N2 else (if ((distance((< 1, P, 3, E2, E3 >) EC, 1) == N1) and (sizeBlock((< 1, P, 3, E2, E3 >) EC, 1) < N2) or (N2 == 1)) then minBlockE1(EC (< 1, P, 3, E2, E3 >), N1, sizeBlock((< 1, P, 3, E2, E3 >) EC, 0), N3 + 1, N4) else minBlockE1(EC (< 1, P, 3, E2, E3 >), N1, N2, N3 + 1, N4) fi) fi .
+     eq minBlockE1((< 1, P, 3, E2, E3 >) EC, N1, N2, N3, N4)  = if (N3 == N4) then N2 else (if ((distance((< 1, P, 3, E2, E3 >) EC, 1) == N1) and (sizeBlock((< 1, P, 3, E2, E3 >) EC, 0) < N2) or (N2 == 1)) then minBlockE1(EC (< 1, P, 3, E2, E3 >), N1, sizeBlock((< 1, P, 3, E2, E3 >) EC, 0), N3 + 1, N4) else minBlockE1(EC (< 1, P, 3, E2, E3 >), N1, N2, N3 + 1, N4) fi) fi .
+
+     op chekIsolate : Ex-seq -> Bool .
+     eq chekIsolate((< 0, P, E1, E2, E3 >) EC) = chekIsolate(EC) .
+     eq chekIsolate((< 1, P, 1, E2, E3 >) EC) = true .
+     eq chekIsolate((< 1, P, 2, E2, E3 >) EC) = false .
+     eq chekIsolate((< 1, P, 3, E2, E3 >) EC) = false .
+     
+     op checkBlockNeighIsolated : Ex-seq -> Bool .
+     op checkBlockNeighIsolated1 : Ex-seq -> Bool .
+     eq checkBlockNeighIsolated((< 1, P, 3, E2, E3 >) EC) = if chekIsolate(revertE(EC)) then true else checkBlockNeighIsolated1(EC) fi .
+     eq checkBlockNeighIsolated1((< 0, P, E1, E2, E3 >) EC) = checkBlockNeighIsolated1(EC) .
+     eq checkBlockNeighIsolated1((< 1, P, 2, E2, E3 >) EC) = checkBlockNeighIsolated1(EC) .
+     eq checkBlockNeighIsolated1((< 1, P, 3, E2, E3 >) EC) = chekIsolate(EC) .
+     
+
+     op maxiBlockIsolated : Seq -> Nat .
+     op maxiBlockIsolated1 : Ex-seq Nat -> Nat .
+     op maxiBlockIsolated2 : Ex-seq Nat Nat Nat Nat -> Nat .   
+     eq maxiBlockIsolated(S) = maxiBlockIsolated2(makeBlockS(S), interdistance(S), 1, 1, numPairs(S)) .
+     eq maxiBlockIsolated1(EC, N) = maxiBlockIsolated2(EC, N, 1, 1, numPairs(EC)) .
+     eq maxiBlockIsolated2((< 0, P, E1, E2, E3 >) EC, N1, N2, N3, N4) = if (N3 == N4) then N2 else maxiBlockIsolated2(EC (< 0, P, E1, E2, E3 >), N1, N2, N3 + 1, N4) fi .
+     eq maxiBlockIsolated2((< 1, P, 1, E2, E3 >) EC, N1, N2, N3, N4) = if (N3 == N4) then N2 else maxiBlockIsolated2(EC (< 1, P, 1, E2, E3 >), N1, N2, N3 + 1, N4) fi .
+     eq maxiBlockIsolated2((< 1, P, 2, E2, E3 >) EC, N1, N2, N3, N4) = if (N3 == N4) then N2 else maxiBlockIsolated2(EC (< 1, P, 2, E2, E3 >), N1, N2, N3 + 1, N4) fi .
+     eq maxiBlockIsolated2((< 1, P, 3, E2, E3 >) EC, N1, N2, N3, N4)  = if (N3 == N4) then N2 else (if ((distance((< 1, P, 3, E2, E3 >) EC, 1) == N1) and checkBlockNeighIsolated((< 1, P, 3, E2, E3 >) EC) and ((sizeBlock((< 1, P, 3, E2, E3 >) EC, 0) > N2) or (N2 == 1))) then maxiBlockIsolated2(EC (< 1, P, 3, E2, E3 >), N1, sizeBlock((< 1, P, 3, E2, E3 >) EC, 0), N3 + 1, N4) else maxiBlockIsolated2(EC (< 1, P, 3, E2, E3 >), N1, N2, N3 + 1, N4) fi) fi .
+
+      op minDisMaxBlockIsolate : Seq -> Nat .
+      op minDisMaxBlockIsolateLR : Seq -> Nat .
+      op minDisMaxBlockIsolate1 : Ex-seq Nat Nat Nat Nat Nat -> Nat .
+      eq minDisMaxBlockIsolateLR(S) = minDisMaxBlockIsolate1(makeBlockS(S), interdistance(S), 1, 1, numPairs(S), maxiBlockIsolated(S)) .
+      eq minDisMaxBlockIsolate1((< 0, P, E1, E2, E3 >) EC, N1, N2, N3, N4, N5) = if (N3 == N4) then N2 else minDisMaxBlockIsolate1(EC (< 0, P, E1, E2, E3 >), N1, N2, N3 + 1, N4, N5) fi .
+      eq minDisMaxBlockIsolate1((< 1, P, 3, E2, E3 >) EC, N1, N2, N3, N4, N5) = if (N3 == N4) then N2 else minDisMaxBlockIsolate1(EC (< 1, P, 3, E2, E3 >), N1, N2, N3 + 1, N4, N5) fi .
+      eq minDisMaxBlockIsolate1((< 1, P, 2, E2, E3 >) EC, N1, N2, N3, N4, N5) = if (N3 == N4) then N2 else minDisMaxBlockIsolate1(EC (< 1, P, 2, E2, E3 >), N1, N2, N3 + 1, N4, N5) fi .
+      eq minDisMaxBlockIsolate1((< 1, P, 1, E2, E3 >) EC, N1, N2, N3, N4, N5)  = if (N3 == N4) then N2 else (if (sizeBlock(EC, 0) == N5 and neighbor(EC) and (distance((< 1, P, 1, E2, E3 >) EC, 1) < N2 or (N2 == 1))) then minDisMaxBlockIsolate1(EC (< 1, P, 1, E2, E3 >), N1, distance((< 1, P, 1, E2, E3 >) EC, 1), N3 + 1, N4, N5) else minDisMaxBlockIsolate1(EC (< 1, P, 1, E2, E3 >), N1, N2, N3 + 1, N4, N5) fi) fi .
+      
+      eq minDisMaxBlockIsolate(S) = if minDisMaxBlockIsolateLR(S) == 1 then minDisMaxBlockIsolateLR(revert(S)) else (if minDisMaxBlockIsolateLR(revert(S)) == 1 then minDisMaxBlockIsolateLR(S) else min(minDisMaxBlockIsolateLR(S), minDisMaxBlockIsolateLR(revert(S))) fi) fi .
+     
 
       op maxMinBlock : Seq -> Nat .
       op maxMinBlock1 : Ex-seq Nat Nat Nat Nat Nat -> Nat .
@@ -451,13 +486,8 @@ endfm)
      op checkIsolatedNeigh : Ex-seq Nat -> Bool .
      eq checkIsolatedNeigh(EC, N) = if (neighbor(EC)) and (sizeBlockE(EC, 0) == maxiBlock2(EC, N)) then true else false fi . 
 
-     op checkA : Seq -> Bool .
-     op checkAE : Ex-seq -> Bool .
-     eq checkA(S) = checkAE(makeBlockS(S)) .
-     eq checkAE((< N, P, E1, E2, E3 >) EC) = if (E1 == 1) then checkIsolatedNeigh(EC, interdistance2(EC)) else false fi .
-
-     op checkB : Seq -> Bool .
-     eq checkB(S) =  (interdistance(S) >= 1) and (isolated(S) == 0) .
+     
+     
 
      op numBlock : Ex-seq  -> Nat .
      op numBlock1 : Ex-seq  -> Nat .
@@ -486,8 +516,8 @@ endfm)
      op numLeaderBlock : Ex-seq -> Nat .
      op numLeaderBlock1 : Ex-seq Ex-seq Nat Nat -> Nat .
      eq numLeaderBlock(EC) = numLeaderBlock1(EC, supermaxCf(EC), 1, numPairs(EC)) .
-     eq numLeaderBlock1((< N, P, 3, E2, E3 >) EC, EC1, N1, N2) = if (N1 == N2) then 0 else (if ((< N, P, 3, E2, E3 >) EC = EC1) or (getViewBlock(EC (< N, P, 3, E2, E3 >)) = EC1) then 1 + numLeaderBlock1(EC (< N, P, 3, E2, E3 >), EC1, N1 + 1, N2) else numLeader1(EC (< N, P, 3, E2, E3 >), EC1, N1 + 1, N2) fi) fi .
-    eq numLeaderBlock1((< N, P, E1, E2, E3 >) EC, EC1, N1, N2) = if (N1 == N2) then 0 else numLeaderBlock1(EC (< N, P, E1, E2, E3 >), EC1, N1, N2) fi [owise] .
+     eq numLeaderBlock1((< N, P, 3, E2, E3 >) EC, EC1, N1, N2) = if (N1 == N2) then 0 else (if ((< N, P, 3, E2, E3 >) EC == EC1) or (getViewBlock(EC (< N, P, 3, E2, E3 >)) == EC1) then 1 + numLeaderBlock1(EC (< N, P, 3, E2, E3 >), EC1, N1 + 1, N2) else numLeader1(EC (< N, P, 3, E2, E3 >), EC1, N1 + 1, N2) fi) fi .
+    eq numLeaderBlock1((< N, P, E1, E2, E3 >) EC, EC1, N1, N2) = if (N1 == N2) then 0 else numLeaderBlock1(EC (< N, P, E1, E2, E3 >), EC1, N1 + 1, N2) fi [owise] .
 
      op checkLeader : Ex-seq -> Bool .
      eq checkLeader(EC) = (EC = supermaxCf(EC)) .
@@ -501,7 +531,25 @@ endfm)
      eq smallDistance1(empE, N1, N2) = N2 .
      eq smallDistance1((< N, P, 3, E2, E3 >) EC, N1, N2) = if N2 == 0 then smallDistance1(EC, N1, distance((< N, P, 3, E2, E3 >) EC, 1)) else (if (distance((< N, P, 3, E2, E3 >) EC, 1) =/= N1) then (if (distance((< N, P, 3, E2, E3 >) EC, 1) < N2) then smallDistance1(EC, N1, distance((< N, P, 3, E2, E3 >) EC, 1)) else smallDistance1(EC, N1, N2) fi) else smallDistance1(EC, N1, N2) fi) fi .
      eq smallDistance1((< N, P, E1, E2, E3 >) EC, N1, N2) =  smallDistance1(EC, N1, N2) [owise] .
+     
+     op checkA : Seq -> Bool .
+     op checkA1 : Ex-seq Nat -> Bool .
+     eq checkA(S) = checkA1(makeBlockS(S), interdistance(S)) .
+     eq checkA1(EC, N) = (N >= 1) and (isolatedE(EC) > 0) .
 
+     op checkMoveA : Seq -> Bool .
+     op checkMoveA1 : Ex-seq Nat Nat Nat -> Bool .
+     op checkViewA : Ex-seq Nat Nat -> Bool .
+     eq checkMoveA(S) = checkMoveA1(makeBlockS(S), interdistance(S), minDisMaxBlockIsolate(S), maxiBlockIsolated(S)) .
+     eq checkMoveA1(EC, N1, N2, N3) = (N1 >= 1) and (isolatedE(EC) > 0) and checkViewA(EC, N2, N3) .
+     eq checkViewA((< 1, P, 1, E2, E3 >) EC, N2, N3) = neighbor(EC) and  (distance((< 1, P, 1, E2, E3 >) EC, 1) == N2) and (sizeBlock(EC, 0) == N3) .
+     eq checkViewA(SO EC, N2, N3) =  false [owise] .
+
+     op checkB : Seq -> Bool .
+     op checkB1 : Ex-seq Nat -> Bool .
+     eq checkB(S) =  checkB1(makeBlockS(S), interdistance(S)) .
+     eq checkB1(EC, N) = (N >= 1) and  (isolatedE(EC) == 0) and (numBlock(EC) > numLeaderBlock(EC)) .
+     
      op checkB1oneLeader : Seq -> Bool .
      op checkB1oneLeader1 : Ex-seq Nat -> Bool .
      eq checkB1oneLeader(S) = checkB1oneLeader1(makeBlockS(S), interdistance(S)) and checkSameBlockSize1(S) .
@@ -522,14 +570,34 @@ endfm)
 
 
      op checkB2 : Seq -> Bool .
-     op checkB21 : Ex-seq Nat -> Bool .
-     op checkView : Ex-seq -> Bool .
-     eq checkB2(S) = (not checkSameBlockSize1(S)) and (checkB21(makeBlockS(S), interdistance(S))) .
-     eq checkB21(EC, N)  = (N >= 1) and (isolatedE(EC) == 0) and (numBlock(EC) > numLeaderBlock(EC)) and checkView(EC) .
-     eq checkView((< 1, P, 3, E2, E3 >) EC) = true .
-     eq checkView(SO EC) =  false [owise] .
+     op checkB21 : Ex-seq Nat Nat Nat Nat -> Bool .
+     op checkViewB : Ex-seq Nat Nat Nat -> Bool .
+     eq checkB2(S) = (not checkSameBlockSize1(S)) and (checkB21(makeBlockS(S), interdistance(S), minBlock1(S), maxMinBlock(S), minMaxDisBlock(S))) .
+     eq checkB21(EC, N, N1, N2, N3)  = (N >= 1) and (isolatedE(EC) == 0) and (numBlock(EC) > numLeaderBlock(EC)) and checkViewB(EC, N1, N2, N3) .
+     eq checkViewB((< 1, P, 3, E2, E3 >) EC, N1, N2, N3) = (sizeBlock((< 1, P, 3, E2, E3 >) EC, 0) == N1) and (sizeBlock(revertE(EC) (< 1, P, 3, E2, E3 >), 0) == N2) and (distance((< 1, P, 3, E2, E3 >) revertE(EC), 1) == N3) .
+     eq checkViewB(SO EC, N1, N2, N3) =  false [owise] .
+
+     op checkC : Seq -> Bool .
+     op checkC1 : Ex-seq Nat -> Bool .
+     eq checkC(S) = checkC1(makeBlockS(S), interdistance(S)) .
+     eq checkC1(EC, N) = (N >= 2) and (isolatedE(EC) == 0) and (numBlock(EC) == numLeaderBlock(EC)) .
+
+     op checkMoveC : Seq -> Bool .
+     op checkMoveC1 : Ex-seq Nat -> Bool .
+     op checkViewC : Ex-seq Nat -> Bool .
+     eq checkMoveC(S) = checkMoveC1(makeBlockS(S), interdistance(S)) .
+     eq checkMoveC1(EC, N) = (N >= 2) and (isolatedE(EC) == 0) and (numBlock(EC) == numLeaderBlock(EC)) and checkViewC(EC, N) .
+     eq checkViewC((< 1, P, 3, E2, E3 >) EC, N) = (distance((< 1, P, 3, E2, E3 >) EC, 1) == N) .
+     eq checkViewC(SO EC, N) =  false [owise] .
+
+
+     op checkD : Seq -> Bool .
+     op checkD1 : Ex-seq Nat -> Bool .
+     eq checkD(S) = checkC1(makeBlockS(S), interdistance(S)) .
+     eq checkD1(EC, N) = (N == 1) and (isolatedE(EC) == 0) and (numBlock(EC) == numLeaderBlock(EC)) .
+     
     
-     *** and (distance(EC, 1) == N)
+     
 endfm)
 
     
@@ -544,8 +612,7 @@ endfm)
    vars S S' : Seq .
    var P : Pair .
 
-   eq invert(P S') = invert(S') P .
-   crl [w1a] : {S1 < 1, nil > < 0, nil > S2} => {S1 < 1, FC- > < 0, FC > S2} if checkA(< 1, nil > < 0, nil > S2 S1) and (interdistance(< 1, nil > < 0, nil > S2 S1) >= 1) .
+   crl [w1a] : {S1 < 1, nil > < 0, nil > S2} => {S1 < 1, FC- > < 0, FC > S2} if checkMoveA(< 1, nil > < 0, nil > S2 S1) .
    
    crl [w1b1] : {S1 < 0, nil > < 1, nil > S2} => {S1 < 0, FC > < 1, FC- > S2} if checkB1oneLeader(< 1, nil > S2 S1 < 0, nil >) .
    
@@ -553,12 +620,15 @@ endfm)
    
    crl [w1b3] : {S1 < 0, nil > < 1, nil > S2} => {S1 < 0, FC > < 1, FC- > S2} if checkB1TwoLeaderSizeM2(< 1, nil > S2 S1 < 0, nil >) .
 
-   *** crl [w1b4] : {S1 < 0, nil > < 1, nil > S2} => {S1 < 0, FC > < 1, FC- > S2} if checkB2(< 1, nil > S2 S1 < 0, nil >) .
+   crl [w1b4] : {S1 < 0, nil > < 1, nil > S2} => {S1 < 0, FC > < 1, FC- > S2} if checkB2(< 1, nil > S2 S1 < 0, nil >) .
+   
+   crl [w1c] : {S1 < 1, nil > < 0, nil > S2} => {S1 < 1, FC- > < 0, FC > S2} if checkMoveC(< 1, nil > < 0, nil > S2 S1) .
 
    rl [pending1] : {S1 < 1, FC- > < 0, FC > S2} => {S1 < 0, nil > < 1, nil > S2} .
    
+
    op initial : -> Config .
-   eq initial = {< 1, nil > < 0, nil >  < 1, nil >  < 0, nil >  < 1, nil > < 0, nil > < 0, nil > < 1, nil > < 0, nil > < 1, nil > < 0, nil > < 1, nil > < 0, nil > < 0, nil > < 0, nil >  < 1, nil > < 0, nil > < 1, nil > < 0, nil > < 1, nil > < 0, nil > < 0, nil > } .
+   eq initial = {< 1, nil > < 0, nil > < 0, nil > < 1, nil > < 0, nil > < 0, nil > < 0, nil > < 1, nil > < 0, nil > < 1, nil > < 0, nil > < 1, nil > < 0, nil > < 1, nil >  < 0, nil > < 0, nil > < 1, nil > < 0, nil >  < 1, nil > < 0, nil > < 1, nil > < 0, nil > < 0, nil >} .
 endm)
 
 (mod EXP is
@@ -582,7 +652,11 @@ endm)
     op endOfSetUp : Config -> Bool .
     op checkTowersCon : Config -> Bool .
 
+    var S : Seq .
     var C : Config .
+
+    eq endOfSetUp({S}) = not (checkA(S) or checkB(S) or checkC(S)) . 
+    eq checkTowersCon({S}) = checkD(S) .
      
     eq C |= endOf = endOfSetUp(C) .
     eq C |= SetUp = checkTowersCon(C) .
@@ -594,8 +668,12 @@ endm)
     pr EXP-PREDS .
     inc MODEL-CHECKER .
     inc LTL-SIMPLIFIER .
+     var C : Config .
 
     op theorem3-1 : -> Formula .    
     eq theorem3-1 = [] (endOf -> SetUp) /\ <> endOf .
+
 endm)
+
+
 
