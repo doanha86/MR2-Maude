@@ -1,5 +1,6 @@
+load model-checker.maude
 load full-maude.maude
-load model-checker.maude 
+
 fmod RSIGNATURE is
  inc FULL-MAUDE-SIGN .
 
@@ -45,14 +46,22 @@ fmod RING-TRANSFORMATION is
  pr RSIGNATURE .
  pr UNIT .
 
+ sort op-ring .
+ sort op-ringList .
  sort setTermList .
+ subsort op-ring < op-ringList .
  subsort TermList < setTermList .
+
+ op empRL : -> op-ringList  .
+ op <_,_,_> : Qid TypeList Type ->  op-ring [ctor] .
+ op __ : op-ring op-ring -> op-ring [assoc id: empRL] .
+
  op emp : -> setTermList .
  op _||_ : setTermList setTermList -> setTermList [assoc id: emp] .
 
  vars QidS QidS' QidS'' : QidSet .
  vars OPDS OPDS' : OpDeclSet .
- var SSDS : SubsortDeclSet .
+ vars SSDS SSDS' : SubsortDeclSet .
  vars TL TL1 TL' : TermList .
  var TLS : setTermList .
  vars EqC EqC' : EqCondition .
@@ -79,7 +88,7 @@ fmod RING-TRANSFORMATION is
  var S : Sort .
 
  op rt : Module -> Module .
- op rt : Module OpDeclSet -> Module .
+ op rt : Module OpDeclSet SubsortDeclSet -> Module .
 
  op rt-eq : EquationSet QidSet QidSet QidSet -> EquationSet .
  op rt-eq-add : Equation QidSet QidSet QidSet -> EquationSet .
@@ -124,42 +133,56 @@ fmod RING-TRANSFORMATION is
  op rt-getTermList : Qid TermList -> TermList .
  op invert : TermList -> TermList .
  
+ op rt-addInvertOp : OpDeclSet SubsortDeclSet -> OpDeclSet .
  op rt-addInvertEq : OpDeclSet TypeList -> EquationSet .
- op rt-addInvertOp : OpDeclSet  -> OpDeclSet .
  op getTypeList : OpDeclSet -> TypeList .
- op addInvert : Qid TypeList -> EquationSet .
+ *** op addInvert : Qid TypeList -> EquationSet .
+ op addInvert : Qid TypeList Term -> EquationSet .
  op addInvert1 : TypeList -> OpDeclSet .
  op _in_ : Type TypeList -> Bool .
+ op checkId : AttrSet -> Bool .
+ op getId : AttrSet -> Term .
+ 
+
+ eq checkId((id(T)) AtS) = true .
+ eq checkId(AtS) = false [owise] .
+
+ eq getId((id(T)) AtS) = T .
+ eq getId(AtS) = none [owise] .
+ 
  
  eq (Tp in (Tp' TpL)) = (Tp == Tp') or (Tp in TpL) .
  eq (Tp in nil) = false .
 
  eq getTypeList(op F : TpL -> Tp' [AtS] . OPDS) = if (metadata("ring") in (AtS)) or (metadata("aring") in (AtS)) then TpL getTypeList(OPDS) else getTypeList(OPDS) fi .
  
- eq rt-addInvertEq(op F : Tp Tp -> Tp [AtS] . OPDS, TpL) = if ((Tp in TpL) and (ctor in AtS)) then addInvert(F, Tp) rt-addInvertEq(OPDS, TpL) else rt-addInvertEq(OPDS, TpL) fi .
+ *** eq rt-addInvertEq(op F : Tp Tp -> Tp [AtS] . OPDS, TpL) = if ((Tp in TpL) and (ctor in AtS) and checkId(AtS)) then addInvert(F, Tp) rt-addInvertEq(OPDS, TpL) else rt-addInvertEq(OPDS, TpL) fi .
+ eq rt-addInvertEq(op F : Tp Tp -> Tp [AtS] . OPDS, TpL) = if ((Tp in TpL) and (ctor in AtS) and checkId(AtS)) then addInvert(F, Tp, getId(AtS)) rt-addInvertEq(OPDS, TpL) else rt-addInvertEq(OPDS, TpL) fi .
  eq rt-addInvertEq(OP OPDS, TpL) =  rt-addInvertEq(OPDS, TpL) [owise] .
  eq rt-addInvertEq(none, TpL) = none .
  
- *** eq addInvert(Q, Tp) =  (eq 'invert[Q[qid("F:" + string(Tp)), qid("F':" + string(Tp))]] = Q['invert[qid("F':" + string(Tp))], 'invert[qid("F:" + string(Tp))]] [none] .) (eq 'invert[qid("F:" + string(Tp))] = qid("F:" + string(Tp)) [owise] .) .
+  *** eq addInvert(Q, Tp) =  (eq 'invert[Q[qid("F:" + string(Tp)), qid("F':" + string(Tp))]] = Q['invert[qid("F':" + string(Tp))], 'invert[qid("F:" + string(Tp))]] [none] .) (eq 'invert[qid("F:" + string(Tp))] = qid("F:" + string(Tp)) [owise] .) .
 
- eq addInvert(Q, Tp) =  (eq 'invert[qid("F:" + string(Tp))] = qid("F:" + string(Tp)) [owise] .) .
+  *** eq addInvert(Q, Tp, T) =  (ceq 'invert[Q[qid("F:" + string(Tp)), qid("F':" + string(Tp))]] = Q['invert[qid("F':" + string(Tp))], 'invert[qid("F:" + string(Tp))]] if ('=/=[qid("F':" + string(Tp)), T]) [none] .) (eq 'invert[qid("F:" + string(Tp))] = qid("F:" + string(Tp)) [owise] .) .
+
+   eq addInvert(Q, Tp, T) =  (ceq 'invert[Q[qid("F:" + string(Tp)), qid("F':" + string(Tp))]] = Q['invert[qid("F':" + string(Tp))], 'invert[qid("F:" + string(Tp))]] if '_and_['_=/=_[qid("F:" + string(Tp)), T], '_=/=_[qid("F':" + string(Tp)), T]] = 'true.Bool [none] .) (eq 'invert[qid("F:" + string(Tp))] = qid("F:" + string(Tp)) [owise] .) .
  
- eq rt-addInvertOp(op F : TpL -> Tp [AtS] . OPDS) = if (metadata("ring") in (AtS)) or (metadata("aring") in (AtS)) then addInvert1(TpL) rt-addInvertOp(OPDS) else rt-addInvertOp(OPDS) fi .
- eq rt-addInvertOp(none) = none .
+ eq rt-addInvertOp(op F : TpL -> Tp [AtS] . OPDS, SSDS) = if (metadata("ring") in (AtS)) or (metadata("aring") in (AtS)) then addInvert1(TpL) rt-addInvertOp(OPDS, SSDS) else rt-addInvertOp(OPDS, SSDS) fi .
+ eq rt-addInvertOp(none, SSDS) = none .
  
  eq addInvert1(TpL) =  (op 'invert : TpL -> TpL [none] .)  .
  eq addInvert1(nil) = none .
 
- eq rt(mod H is IL sorts SS . SSDS OPDS MAS EqS RlS endm) = mod H is IL sorts SS . SSDS OPDS rt-addInvertOp(OPDS) MAS 
+ eq rt(mod H is IL sorts SS . SSDS OPDS MAS EqS RlS endm) = mod H is IL sorts SS . SSDS OPDS rt-addInvertOp(OPDS, SSDS) MAS 
     rt-addInvertEq(OPDS, getTypeList(OPDS)) rt-eq(EqS, rt-getOpName(OPDS), crt-getOpName(OPDS), art-getOpName(OPDS))
     rt-rl(RlS, rt-getOpName(OPDS), crt-getOpName(OPDS), art-getOpName(OPDS))  endm .
- eq rt(fmod H is IL sorts SS . SSDS OPDS MAS EqS endfm) = fmod H is IL sorts SS . SSDS OPDS rt-addInvertOp(OPDS) MAS
+ eq rt(fmod H is IL sorts SS . SSDS OPDS MAS EqS endfm) = fmod H is IL sorts SS . SSDS OPDS rt-addInvertOp(OPDS, SSDS) MAS
     rt-addInvertEq(OPDS, getTypeList(OPDS)) rt-eq(EqS, rt-getOpName(OPDS), crt-getOpName(OPDS), art-getOpName(OPDS)) endfm .
 
- eq rt(mod H is IL sorts SS . SSDS OPDS MAS EqS RlS endm, OPDS') = mod H is IL sorts SS . SSDS OPDS rt-addInvertOp(OPDS OPDS') MAS
+ eq rt(mod H is IL sorts SS . SSDS OPDS MAS EqS RlS endm, OPDS', SSDS') = mod H is IL sorts SS . SSDS OPDS rt-addInvertOp(OPDS OPDS', SSDS  SSDS') MAS
     rt-addInvertEq(OPDS OPDS', getTypeList(OPDS OPDS')) rt-eq(EqS, rt-getOpName(OPDS OPDS'), crt-getOpName(OPDS OPDS'), art-getOpName(OPDS OPDS'))
     rt-rl(RlS, rt-getOpName(OPDS'), crt-getOpName(OPDS'), art-getOpName(OPDS')) endm .
- eq rt(fmod H is IL sorts SS . SSDS OPDS MAS EqS endfm, OPDS') = fmod H is IL sorts SS . SSDS OPDS rt-addInvertOp(OPDS OPDS') MAS
+ eq rt(fmod H is IL sorts SS . SSDS OPDS MAS EqS endfm, OPDS', SSDS') = fmod H is IL sorts SS . SSDS OPDS rt-addInvertOp(OPDS OPDS', SSDS  SSDS') MAS
     rt-addInvertEq(OPDS OPDS', getTypeList(OPDS OPDS')) rt-eq(EqS, rt-getOpName(OPDS OPDS'), crt-getOpName(OPDS OPDS'), art-getOpName(OPDS OPDS')) endfm .
 
  eq rt-eq(none, QidS, QidS', QidS'') = none .
@@ -244,6 +267,16 @@ fmod RING-TRANSFORMATION is
  eq art-getOpName(op F : TpL -> Tp [AtS] . OPDS) = if (metadata("aring") in (AtS)) then
     F ; art-getOpName(OPDS) else art-getOpName(OPDS) fi .
  eq art-getOpName(none) = none .
+
+  ***(eq rt-getOpName(op F : TpL -> Tp [AtS] . OPDS) = if (ctor in (AtS)) then
+    F ; rt-getOpName(OPDS) else rt-getOpName(OPDS) fi .
+ eq rt-getOpName(none) = none .
+ eq crt-getOpName(op F : TpL -> Tp [AtS] . OPDS) = if (ctor in (AtS)) then
+    F ; crt-getOpName(OPDS) else crt-getOpName(OPDS) fi .
+ eq crt-getOpName(none) = none .
+ eq art-getOpName(op F : TpL -> Tp [AtS] . OPDS) = if (ctor in (AtS)) then
+    F ; art-getOpName(OPDS) else art-getOpName(OPDS) fi .
+ eq art-getOpName(none) = none .)
 
  eq eqQidList(Q ; QidS, QidS') = (Q in QidS') or eqQidList(QidS, QidS') .
  eq eqQidList(none, QidS') = false .
@@ -366,6 +399,7 @@ mod RING is
  eq parsePreAttrs('aring.@Attr@, N) = metadata("aring") .
 
  op RDatabase : -> RDatabaseClass [ctor] .
+ *** Makes sure this rule is used
  op ring-header : Term -> Term .
  eq ring-header('fmod_is_endfm[T, T']) = 'rfmod_is_endfm[T, T'] .
  eq ring-header('mod_is_endm[T, T']) = 'rmod_is_endm[T, T'] .
@@ -397,11 +431,16 @@ mod RING is
                else database(evalModExp(Q, DB'))
                fi /\
         M' := rt(getFlatModule(Q, DB1)) /\
-        M := rt(getTopModule(Q, DB1), getOps(M')) /\
-        M'' := rt(getInternalModule(Q, DB1), getOps(M')) /\
+        M := rt(getTopModule(Q, DB1), getOps(M'), getSubsorts(M')) /\
+        M'' := rt(getInternalModule(Q, DB1), getOps(M'), getSubsorts(M')) /\
         DB'' := insertTopModule(Q, M, DB1) /\
         DB''' := insertFlatModule(Q, M', DB'') /\
         DB2 := insertInternalModule(Q, M'', DB''') .
+
+
+
+ ***(      	M' := rt(getFlatModule(Q, DB1)) /\
+        M := rt(getTopModule(Q, DB1), getOps(M')) /\ )
 
 var DB1 DB2 : Database .
 var M'' : Module .
@@ -470,7 +509,5 @@ mod RING-INIT is
  => [QIL, < O : X@Database | output : nil, Atts >, (QIL'' QI QIL')] .
 endm
 
-
 loop rinit .
-
 
