@@ -593,7 +593,7 @@ endfm)
 
      op checkD : Seq -> Bool .
      op checkD1 : Ex-seq Nat -> Bool .
-     eq checkD(S) = checkC1(makeBlockS(S), interdistance(S)) .
+     eq checkD(S) = checkD1(makeBlockS(S), interdistance(S)) .
      eq checkD1(EC, N) = (N == 1) and (isolatedE(EC) == 0) and (numBlock(EC) == numLeaderBlock(EC)) .
      
     
