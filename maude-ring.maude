@@ -23,6 +23,7 @@ fmod META-RSIGN is
  var SS : SortSet .
  var H : Header .
  var I : Import .
+ var M : Module .
 
  op addExclusion : FModule -> FModule .
  eq addExclusion(fmod H is IL sorts SS . SSDS
@@ -45,6 +46,7 @@ fmod RING-TRANSFORMATION is
  pr META-LEVEL .
  pr RSIGNATURE .
  pr UNIT .
+ pr NAT .
 
  sort op-ring .
  sort op-ringList .
@@ -86,9 +88,14 @@ fmod RING-TRANSFORMATION is
  var R : Rule .
  var Q : Qid .
  var S : Sort .
+ var M : Module .
+ vars N1 N3 N4 : String .
+ vars N2 N5 : TermList .
 
  op rt : Module -> Module .
  op rt : Module OpDeclSet SubsortDeclSet -> Module .
+ op rt1 : Module -> Module .
+ op rt1 : Module OpDeclSet SubsortDeclSet -> Module .
 
  op rt-eq : EquationSet QidSet QidSet QidSet -> EquationSet .
  op rt-eq-add : Equation QidSet QidSet QidSet -> EquationSet .
@@ -136,13 +143,75 @@ fmod RING-TRANSFORMATION is
  op rt-addInvertOp : OpDeclSet SubsortDeclSet -> OpDeclSet .
  op rt-addInvertEq : OpDeclSet TypeList -> EquationSet .
  op getTypeList : OpDeclSet -> TypeList .
- *** op addInvert : Qid TypeList -> EquationSet .
  op addInvert : Qid TypeList Term -> EquationSet .
  op addInvert1 : TypeList -> OpDeclSet .
  op _in_ : Type TypeList -> Bool .
  op checkId : AttrSet -> Bool .
  op getId : AttrSet -> Term .
  
+ op slipt : TermList QidSet QidSet QidSet -> TermList .
+ op slipt1 : TermList QidSet QidSet QidSet -> TermList .
+ op slipt : TermList QidSet QidSet QidSet -> TermList .
+ op sliptr : TermList QidSet -> TermList .
+ 
+ 
+ op sliptt : TermList  -> TermList .
+ op sliptt1 : TermList  -> TermList .
+
+ op getVarSetSlipt : TermList QidSet QidSet QidSet -> TermList .
+ op getVarSetSlipt1 : TermList QidSet QidSet QidSet -> TermList .
+
+
+
+  eq sliptt(V) = V .
+  eq sliptt(C) = C .
+  eq sliptt(F'[F[TL]]) =  F'[F[sliptt1(TL)]]  .
+  eq sliptt(F[TL]) = F[TL] [owise] .
+  
+  eq sliptt1(V) = (V ; qid(string(getName(V)) + "1" + ":" + string(getType(V)))) .
+  eq sliptt1(C) = C .
+  eq sliptt1(F[TL]) = F[sliptt(TL)]  .
+  eq sliptt1((T, TL)) = sliptt1(T), sliptt1(TL) [owise] .
+
+  eq getVarSetSlipt(V, QidS, QidS', QidS'') = none .
+  eq getVarSetSlipt(C, QidS, QidS', QidS'') = none .
+  ceq getVarSetSlipt(F'[F[TL]], QidS, QidS', QidS'') =  getVarSetSlipt1(TL, QidS, QidS', QidS'') if (F' in QidS) .
+  ceq getVarSetSlipt(F'[F[TL]], QidS, QidS', QidS'') =  getVarSetSlipt1(TL, QidS, QidS', QidS'') if (F' in QidS') .
+  ceq getVarSetSlipt(F'[F[TL]], QidS, QidS', QidS'') =  getVarSetSlipt1(TL, QidS, QidS', QidS'') if (F' in QidS'') .
+  eq getVarSetSlipt(empty, QidS, QidS', QidS'') = none .
+  eq getVarSetSlipt(F[TL], QidS, QidS', QidS'') = getVarSetSlipt(TL, QidS, QidS', QidS'') .
+  eq getVarSetSlipt((T, TL), QidS, QidS', QidS'') = (getVarSetSlipt(T, QidS, QidS', QidS'') ; getVarSetSlipt(TL, QidS, QidS', QidS'')) [owise] .
+
+  eq getVarSetSlipt1(V, QidS, QidS', QidS'') = V  .
+  eq getVarSetSlipt1(C, QidS, QidS', QidS'') = none .
+  eq getVarSetSlipt1(F[TL], QidS, QidS', QidS'') = getVarSetSlipt(TL, QidS, QidS', QidS'')  .
+  eq getVarSetSlipt1((T, TL),  QidS, QidS', QidS'') = getVarSetSlipt1(T,  QidS, QidS', QidS'') ; getVarSetSlipt1(TL,  QidS, QidS', QidS'') [owise] .
+
+
+  eq slipt(V, QidS, QidS', QidS'') = V .
+  eq slipt(C, QidS, QidS', QidS'') = C .
+  ceq slipt(F'[F[TL]], QidS, QidS', QidS'') =  F'[F[slipt1(TL, QidS, QidS', QidS'')]] if (F' in QidS) .
+  ceq slipt(F'[F[TL]], QidS, QidS', QidS'') =  F'[F[slipt1(TL, QidS, QidS', QidS'')]] if (F' in QidS') .
+  ceq slipt(F'[F[TL]], QidS, QidS', QidS'') =  F'[F[slipt1(TL, QidS, QidS', QidS'')]] if (F' in QidS'') .
+  eq slipt(empty, QidS, QidS', QidS'') = empty .
+  eq slipt(F[TL], QidS, QidS', QidS'') = F[slipt(TL, QidS, QidS', QidS'')] .
+  eq slipt((T, TL), QidS, QidS', QidS'') = (slipt(T, QidS, QidS', QidS'') , slipt(TL, QidS, QidS', QidS'')) [owise] .
+
+
+
+ *** eq slipt1(V, QidS, QidS', QidS'') = (V , qid(string(getName(V)) + "1" + ":" + string(getType(V)))) .
+ eq slipt1(V, QidS, QidS', QidS'') = V .
+ eq slipt1(C, QidS, QidS', QidS'') = C .
+ eq slipt1(empty, QidS, QidS', QidS'') = empty .
+ eq slipt1(F[TL], QidS, QidS', QidS'') = F[slipt(TL, QidS, QidS', QidS'')]  .
+ eq slipt1((T, TL),  QidS, QidS', QidS'') = slipt1(T,  QidS, QidS', QidS''), slipt1(TL,  QidS, QidS', QidS'') [owise] .
+
+ *** eq sliptr(V, QidS) = if (V in QidS) then (V , qid(string(getName(V)) + "1" + ":" + string(getType(V)))) else V fi .
+ eq sliptr(V, QidS) = V .
+ eq sliptr(C, QidS) = C .
+ eq sliptr(empty, QidS) = empty .
+ eq sliptr(F[TL], QidS) = F[sliptr(TL, QidS)] .
+ eq sliptr((T, TL), QidS) = (sliptr(T, QidS) , sliptr(TL, QidS)) .
 
  eq checkId((id(T)) AtS) = true .
  eq checkId(AtS) = false [owise] .
@@ -156,16 +225,14 @@ fmod RING-TRANSFORMATION is
 
  eq getTypeList(op F : TpL -> Tp' [AtS] . OPDS) = if (metadata("ring") in (AtS)) or (metadata("aring") in (AtS)) then TpL getTypeList(OPDS) else getTypeList(OPDS) fi .
  
- *** eq rt-addInvertEq(op F : Tp Tp -> Tp [AtS] . OPDS, TpL) = if ((Tp in TpL) and (ctor in AtS) and checkId(AtS)) then addInvert(F, Tp) rt-addInvertEq(OPDS, TpL) else rt-addInvertEq(OPDS, TpL) fi .
+
  eq rt-addInvertEq(op F : Tp Tp -> Tp [AtS] . OPDS, TpL) = if ((Tp in TpL) and (ctor in AtS) and checkId(AtS)) then addInvert(F, Tp, getId(AtS)) rt-addInvertEq(OPDS, TpL) else rt-addInvertEq(OPDS, TpL) fi .
  eq rt-addInvertEq(OP OPDS, TpL) =  rt-addInvertEq(OPDS, TpL) [owise] .
  eq rt-addInvertEq(none, TpL) = none .
- 
-  *** eq addInvert(Q, Tp) =  (eq 'invert[Q[qid("F:" + string(Tp)), qid("F':" + string(Tp))]] = Q['invert[qid("F':" + string(Tp))], 'invert[qid("F:" + string(Tp))]] [none] .) (eq 'invert[qid("F:" + string(Tp))] = qid("F:" + string(Tp)) [owise] .) .
 
-  *** eq addInvert(Q, Tp, T) =  (ceq 'invert[Q[qid("F:" + string(Tp)), qid("F':" + string(Tp))]] = Q['invert[qid("F':" + string(Tp))], 'invert[qid("F:" + string(Tp))]] if ('=/=[qid("F':" + string(Tp)), T]) [none] .) (eq 'invert[qid("F:" + string(Tp))] = qid("F:" + string(Tp)) [owise] .) .
+ *** eq addInvert(Q, Tp, T) =  (eq 'invert[qid("F:" + string(Tp))] = qid("F:" + string(Tp)) [owise] .) .
 
-   eq addInvert(Q, Tp, T) =  (ceq 'invert[Q[qid("F:" + string(Tp)), qid("F':" + string(Tp))]] = Q['invert[qid("F':" + string(Tp))], 'invert[qid("F:" + string(Tp))]] if '_and_['_=/=_[qid("F:" + string(Tp)), T], '_=/=_[qid("F':" + string(Tp)), T]] = 'true.Bool [none] .) (eq 'invert[qid("F:" + string(Tp))] = qid("F:" + string(Tp)) [owise] .) .
+  eq addInvert(Q, Tp, T) =  (ceq 'invert[Q[qid("F:" + string(Tp)), qid("F':" + string(Tp))]] = Q['invert[qid("F':" + string(Tp))], 'invert[qid("F:" + string(Tp))]] if '_and_['_=/=_[qid("F:" + string(Tp)), T], '_=/=_[qid("F':" + string(Tp)), T]] = 'true.Bool [none] .) (eq 'invert[qid("F:" + string(Tp))] = qid("F:" + string(Tp)) [owise] .) .
  
  eq rt-addInvertOp(op F : TpL -> Tp [AtS] . OPDS, SSDS) = if (metadata("ring") in (AtS)) or (metadata("aring") in (AtS)) then addInvert1(TpL) rt-addInvertOp(OPDS, SSDS) else rt-addInvertOp(OPDS, SSDS) fi .
  eq rt-addInvertOp(none, SSDS) = none .
@@ -173,16 +240,20 @@ fmod RING-TRANSFORMATION is
  eq addInvert1(TpL) =  (op 'invert : TpL -> TpL [none] .)  .
  eq addInvert1(nil) = none .
 
- eq rt(mod H is IL sorts SS . SSDS OPDS MAS EqS RlS endm) = mod H is IL sorts SS . SSDS OPDS rt-addInvertOp(OPDS, SSDS) MAS 
+ *** eq rt(M) = rt1(rb(M)) .
+ eq rt(M) = rb(M) .
+ eq rt(M, OPDS', SSDS') = rt1(rb(M), OPDS', SSDS') .
+
+ eq rt1(mod H is IL sorts SS . SSDS OPDS MAS EqS RlS endm) = mod H is IL sorts SS . SSDS OPDS rt-addInvertOp(OPDS, SSDS) MAS 
     rt-addInvertEq(OPDS, getTypeList(OPDS)) rt-eq(EqS, rt-getOpName(OPDS), crt-getOpName(OPDS), art-getOpName(OPDS))
     rt-rl(RlS, rt-getOpName(OPDS), crt-getOpName(OPDS), art-getOpName(OPDS))  endm .
- eq rt(fmod H is IL sorts SS . SSDS OPDS MAS EqS endfm) = fmod H is IL sorts SS . SSDS OPDS rt-addInvertOp(OPDS, SSDS) MAS
+ eq rt1(fmod H is IL sorts SS . SSDS OPDS MAS EqS endfm) = fmod H is IL sorts SS . SSDS OPDS rt-addInvertOp(OPDS, SSDS) MAS
     rt-addInvertEq(OPDS, getTypeList(OPDS)) rt-eq(EqS, rt-getOpName(OPDS), crt-getOpName(OPDS), art-getOpName(OPDS)) endfm .
 
- eq rt(mod H is IL sorts SS . SSDS OPDS MAS EqS RlS endm, OPDS', SSDS') = mod H is IL sorts SS . SSDS OPDS rt-addInvertOp(OPDS OPDS', SSDS  SSDS') MAS
+ eq rt1(mod H is IL sorts SS . SSDS OPDS MAS EqS RlS endm, OPDS', SSDS') = mod H is IL sorts SS . SSDS OPDS rt-addInvertOp(OPDS OPDS', SSDS  SSDS') MAS
     rt-addInvertEq(OPDS OPDS', getTypeList(OPDS OPDS')) rt-eq(EqS, rt-getOpName(OPDS OPDS'), crt-getOpName(OPDS OPDS'), art-getOpName(OPDS OPDS'))
     rt-rl(RlS, rt-getOpName(OPDS'), crt-getOpName(OPDS'), art-getOpName(OPDS')) endm .
- eq rt(fmod H is IL sorts SS . SSDS OPDS MAS EqS endfm, OPDS', SSDS') = fmod H is IL sorts SS . SSDS OPDS rt-addInvertOp(OPDS OPDS', SSDS  SSDS') MAS
+ eq rt1(fmod H is IL sorts SS . SSDS OPDS MAS EqS endfm, OPDS', SSDS') = fmod H is IL sorts SS . SSDS OPDS rt-addInvertOp(OPDS OPDS', SSDS  SSDS') MAS
     rt-addInvertEq(OPDS OPDS', getTypeList(OPDS OPDS')) rt-eq(EqS, rt-getOpName(OPDS OPDS'), crt-getOpName(OPDS OPDS'), art-getOpName(OPDS OPDS')) endfm .
 
  eq rt-eq(none, QidS, QidS', QidS'') = none .
@@ -282,6 +353,8 @@ fmod RING-TRANSFORMATION is
  eq eqQidList(none, QidS') = false .
 
  eq rt-eq-add(eq T = T' [AtS] ., QidS, QidS', QidS'') = rt-eq-make(rt-eq-gen(T, QidS, QidS', QidS''), T', AtS) .
+ *** eq rt-eq-add(eq T = T' [AtS] ., QidS, QidS', QidS'') = rt-eq-make(rt-eq-gen(slipt(T, QidS, QidS', QidS''), QidS, QidS', QidS''), T', AtS) .
+ *** eq rt-eq-add(eq T = T' [AtS] ., QidS, QidS', QidS'') = rt-eq-make(rt-eq-gen(slipt(T, QidS, QidS', QidS''), QidS, QidS', QidS''), sliptr(T', getVarSetSlipt1(T)), AtS) .
  eq rt-eq-add(ceq T = T' if EqC [AtS]., QidS, QidS', QidS'') = rt-eq-make(rt-eq-gen(T, QidS, QidS', QidS''), T', EqC, AtS) .
 
  eq rt-rl-add(rl T => T' [AtS] ., QidS, QidS', QidS'') = rt-rl-make(rt-eq-gen(T, QidS, QidS', QidS''), T', AtS) .
@@ -370,7 +443,115 @@ fmod RING-TRANSFORMATION is
 
  eq numElem(empty) = 0 .
  eq numElem((T, TL)) = 1 + numElem(TL) .
+
+ op rb : Module -> Module .
+ op rb-inv : Module -> Module .
+ op rb-fix : Module -> Module .
+ op rb-lc : Module -> Module .
+ op rb-check : Module -> Nat .
+ op rb-check1 : ImportList -> Nat .
+
+ ceq rb(M) = rb-inv(M) if rb-check(M) == 1 .
+ ceq rb(M) = rb-fix(M) if rb-check(M) == 2 .
+ ceq rb(M) = rb-lc(M) if rb-check(M) == 3 .
+ ceq rb(M) = M if rb-check(M) == 0 .
+
+ eq rb-check(mod H is IL sorts SS . SSDS OPDS MAS EqS RlS endm) =  rb-check1(IL) .
+ eq rb-check(fmod H is IL sorts SS . SSDS OPDS MAS EqS endfm) =  rb-check1(IL) .
+ eq rb-check1(nil) = 0 .
+ eq rb-check1((I IL)) = if ((I == (protecting 'RING-INTERVAL .)) or (I == (including 'RING-INTERVAL .)) or (I == (extending 'RING-INTERVAL .)))  then 1 else  rb-check1(IL) fi .
+
+
+ eq rb-inv(mod H is IL sorts SS . SSDS OPDS MAS EqS RlS endm) = mod H is IL sorts SS . SSDS OPDS MAS rb-inv-Initial(EqS) rb-inv-Rule(RlS) endm .
+ eq rb-inv(fmod H is IL sorts SS . SSDS OPDS MAS EqS endfm) = fmod H is IL sorts SS . SSDS OPDS MAS rb-inv-Initial(EqS)  endfm .
+
+ op rb-inv-Initial : EquationSet -> EquationSet .
+ eq rb-inv-Initial(eq T = T' [AtS] . EqS) = if (getType(T) == 'Config) then (eq T = 'inv-Initial[T'] [AtS] .)  rb-inv-Initial(EqS) else (eq T = T' [AtS] .)  rb-inv-Initial(EqS) fi .
+ eq rb-inv-Initial(EqS) = EqS [owise] .
+
+ op rb-inv-Rule : RuleSet -> RuleSet .
+ op rb-inv-Rule1 : Rule -> Rule .
+ op rb-inv-RuleTermR : TermList -> TermList .
+ op rb-inv-RuleTermR1 : TermList String TermList String String TermList -> TermList .
+ op rb-inv-RuleGetQid : TermList -> TermList .
+ op rb-inv-RuleTermL : TermList TermList -> TermList .
+ op rb-inv-RuleTermL1 : TermList TermList String TermList String String -> TermList .
+ op rb-inv-checkMove1 : TermList -> Bool .
+ op rb-inv-checkMove2 : TermList -> Bool .
+ op rb-getName : Term -> QidSet .
+
+ eq rb-getName(V) = getName(V) .
+ eq rb-getName(C) = getName(C) .
+ eq rb-getName(F[TL]) = F .
+ 
+ eq rb-inv-Rule ((R RlS)) = (rb-inv-Rule1(R) rb-inv-Rule(RlS)) .
+ eq rb-inv-Rule1(rl T => T' [AtS] .) = (rl rb-inv-RuleTermL(T, rb-inv-RuleGetQid(T')) => rb-inv-RuleTermR(T') [AtS] .) .
+ eq rb-inv-Rule1(crl T => T' if Cd [AtS] .) = (crl  rb-inv-RuleTermL(T, rb-inv-RuleGetQid(T')) => rb-inv-RuleTermR(T') if Cd [AtS] .) .
+ eq rb-inv-Rule1(none) = none .
+
+ eq rb-inv-RuleGetQid(empty) = empty .
+ eq rb-inv-RuleGetQid(V) = empty .
+ eq rb-inv-RuleGetQid(C) = empty .
+ eq rb-inv-RuleGetQid('_->[T]) =  rb-getName(T) .
+ eq rb-inv-RuleGetQid('_<-[T]) =  rb-getName(T) .
+ eq rb-inv-RuleGetQid(F[TL]) =   rb-inv-RuleGetQid(TL) .
+ eq rb-inv-RuleGetQid((T, TL)) =  rb-inv-RuleGetQid(T), rb-inv-RuleGetQid(TL)  [owise]  .
+
+ eq rb-inv-RuleTermL('`{_`}['_`,_[TL]], QidS) =  '`{_`}['_`,_[rb-inv-RuleTermL1(TL, QidS, "0", 'L:Int, "0", "0")]] .
+ eq rb-inv-RuleTermL1(empty, QidS, N1, N2, N3, N4) =  empty  .
+ *** eq rb-inv-RuleTermL('`{_`}['_`,_[TL]], empty) =  '`{_`}['_`,_[TL]]  .
+ *** eq rb-inv-RuleTermL('`{_`}['_`,_[TL]], empty) = '`{_`}['_`,_[rb-inv-RuleTermL1(TL, empty, "0", 'L:Int, "0", "0")]] .
+
+ eq rb-inv-RuleTermL1((V, TL), QidS, N1, N2, N3, N4) = if (getName(V) in QidS) then '<_`,_`,_`,_`,_>[V,  qid("R" + N1 + ":Robot"), N2,'nil.Pending, qid("PS" +  N4 + ":PendingSet")] , rb-inv-RuleTermL1(TL, QidS, N1 + "0", '_+_[N2, V],  N3 + "0", N4 + "0") else '<_`,_`,_`,_`,_>[V,  qid("R" + N1 + ":Robot"), N2, qid("P" + N3 + ":Pending"),  qid("PS" +  N4 + ":PendingSet")] , rb-inv-RuleTermL1(TL, QidS, N1 + "0", '_+_[N2, V], N3 + "0", N4 + "0") fi .
+ 
+ eq rb-inv-RuleTermL1((C, TL), QidS, N1, N2, N3, N4) = if (getName(C) in QidS) then '<_`,_`,_`,_`,_>[C,  qid("R" + N1 + ":Robot"), N2,'nil.Pending, qid("PS" +  N4 + ":PendingSet")] , rb-inv-RuleTermL1(TL, QidS, N1 + "0", '_+_[N2, C],  N3 + "0", N4 + "0") else '<_`,_`,_`,_`,_>[C,  qid("R" + N1 + ":Robot"), N2, qid("P" + N3 + ":Pending"),  qid("PS" +  N4 + ":PendingSet")] , rb-inv-RuleTermL1(TL, QidS, N1 + "0", '_+_[N2, C], N3 + "0", N4 + "0") fi .
+ 
+ eq rb-inv-RuleTermL1(('_`,_[TL], TL1), QidS, N1, N2, N3, N4) =  '_`,_[ rb-inv-RuleTermL1((TL,TL1), QidS, N1, N2, N3, N4)] .
+
+eq rb-inv-RuleTermL1((F[TL], TL1), QidS, N1, N2, N3, N4) =  if (F in QidS) then '<_`,_`,_`,_`,_>[F[TL], qid("R" + N1 + ":Robot"), N2,'nil.Pending, qid("PS" +  N4 + ":PendingSet")] ,  rb-inv-RuleTermL1(TL1, QidS, N1 + "0", '_+_[N2, F[TL]], N3 + "0", N4 + "0") else '<_`,_`,_`,_`,_>[F[TL], qid("R" + N1 + ":Robot"), N2, qid("P" +  N3 + ":Pending"),  qid("PS" +  N4 + ":PendingSet")] ,  rb-inv-RuleTermL1(TL1, QidS, N1 + "0", '_+_[N2, F[TL]], N3 + "0", N4 + "0") fi .
+
+ 
+  
+  *** eq rb-inv-RuleTermL1((F[TL], TL1), QidS, N1, N2, N3, N4) =  if (F in QidS) then '<_`,_`,_`,_`,_>[F[TL], qid("R" + N1 + ":Robot"), N2,'nil.Pending, qid("PS" +  N4 + ":PendingSet")] ,  rb-inv-RuleTermL1(TL1, QidS, N1 + "0", '_+_[N2, F[TL]], N3 + "0", N4 + "0") else '<_`,_`,_`,_`,_>[F[TL], qid("R" + N1 + ":Robot"), N2, qid("P" +  N3 + ":Pending"),  qid("PS" +  N4 + ":PendingSet")] ,  rb-inv-RuleTermL1(TL1, QidS, N1 + "0", '_+_[N2, F[TL]], N3 + "0", N4 + "0") fi .
+
+ eq rb-inv-checkMove1(('_->[TL], TL1)) = true .
+ *** eq rb-inv-checkMove1('_`,_[TL]) =  rb-inv-checkMove1(TL) .
+ eq rb-inv-checkMove1((T, TL)) =  false [owise] .
+
+
+ eq rb-inv-checkMove2(('_<-[TL], TL1)) = true .
+ *** eq rb-inv-checkMove2('_`,_[TL]) =  rb-inv-checkMove2(TL) .
+ eq rb-inv-checkMove2((T, TL)) =  false [owise] .
+
+ op getOut : TermList -> TermList .
+ eq getOut('_->[TL]) = TL .
+ eq getOut('_<-[TL]) = TL .
+ eq getOut(TL) =  TL [owise] .
+ 
+ eq rb-inv-RuleTermR('`{_`}['_`,_[TL]]) =  '`{_`}['_`,_[rb-inv-RuleTermR1(TL, "0", 'L:Int, "0", "0", empty)]] .
+ eq rb-inv-RuleTermR1(empty, N1, N2, N3, N4, N5) =  empty  .
+
+ eq rb-inv-RuleTermR1((V, TL), N1, N2, N3, N4, N5) = if (rb-inv-checkMove1((TL, N5)) or rb-inv-checkMove2((TL, N5))) then '<_`,_`,_`,_`,_>[V,  qid("R" + N1 + ":Robot"), N2, qid("P" +  N3 + ":Pending"), qid("PS" +  N4 + ":PendingSet")] , rb-inv-RuleTermR1(TL, N1 + "0", '_+_[N2, V],  N3 + "0", N4 + "0", (N5, V)) else '<_`,_`,_`,_`,_>[V,  qid("R" + N1 + ":Robot"), N2, qid("P" +  N3 + ":Pending"),  qid("PS" +  N4 + ":PendingSet")] , rb-inv-RuleTermR1(TL, N1 + "0", '_+_[N2, V], N3 + "0", N4 + "0", (N5, V)) fi .
+
+ *** eq rb-inv-RuleTermR1((V, TL), N1, N2, N3, N4, N5) = if (rb-inv-checkMove1((TL, N5)) or rb-inv-checkMove2((TL, N5))) then '<_`,_`,_`,_`,_>[V,  qid("R" + N1 + ":Robot"), N2, qid("P" +  N3 + ":Pending"), 'add['|_`,_|['0.Nat, ('_`,_[getOut(TL), (N5, V)])], qid("PS" +  N4 + ":PendingSet")]] , rb-inv-RuleTermR1(TL, N1 + "0", '_+_[N2, V],  N3 + "0", N4 + "0", (N5, V)) else '<_`,_`,_`,_`,_>[V,  qid("R" + N1 + ":Robot"), N2, qid("P" +  N3 + ":Pending"),  qid("PS" +  N4 + ":PendingSet")] , rb-inv-RuleTermR1(TL, N1 + "0", '_+_[N2, V], N3 + "0", N4 + "0", (N5, V)) fi .
+
+ eq rb-inv-RuleTermR1((C, TL), N1, N2, N3, N4, N5) = if (rb-inv-checkMove1((TL, N5)) or rb-inv-checkMove2((TL, N5))) then '<_`,_`,_`,_`,_>[C,  qid("R" + N1 + ":Robot"), N2, qid("P" +  N3 + ":Pending"), qid("PS" +  N4 + ":PendingSet")] , rb-inv-RuleTermR1(TL, N1 + "0", '_+_[N2, C],  N3 + "0", N4 + "0", (N5, C)) else '<_`,_`,_`,_`,_>[C,  qid("R" + N1 + ":Robot"), N2, qid("P" +  N3 + ":Pending"),  qid("PS" +  N4 + ":PendingSet")] , rb-inv-RuleTermR1(TL, N1 + "0", '_+_[N2, C], N3 + "0", N4 + "0", (N5, C)) fi .
+
+ *** eq rb-inv-RuleTermR1((C, TL), N1, N2, N3, N4, N5) = if (rb-inv-checkMove1((TL, N5)) or rb-inv-checkMove2((TL, N5))) then '<_`,_`,_`,_`,_>[C,  qid("R" + N1 + ":Robot"), N2, qid("P" +  N3 + ":Pending"), 'add['|_`,_|['0.Nat, ('_`,_[getOut(TL), (N5, C)])], qid("PS" +  N4 + ":PendingSet")]] , rb-inv-RuleTermR1(TL, N1 + "0", '_+_[N2, C],  N3 + "0", N4 + "0", (N5, C)) else '<_`,_`,_`,_`,_>[C,  qid("R" + N1 + ":Robot"), N2, qid("P" +  N3 + ":Pending"),  qid("PS" +  N4 + ":PendingSet")] , rb-inv-RuleTermR1(TL, N1 + "0", '_+_[N2, C], N3 + "0", N4 + "0", (N5, C)) fi .
+
+ eq rb-inv-RuleTermR1(('_->[TL], TL1), N1, N2, N3, N4, N5) =  '<_`,_`,_`,_`,_>[TL,  qid("R" + N1 + ":Robot"), N2, '|_`,_|['0.Nat, '_`,_[N5, TL, TL1]],  qid("PS" +  N4 + ":PendingSet")] , rb-inv-RuleTermR1(TL1, N1 + "0", '_+_[N2, TL],  N3 + "0", N4 + "0", (N5, TL)) .
+
+ eq rb-inv-RuleTermR1(('_<-[TL], TL1), N1, N2, N3, N4, N5) =  '<_`,_`,_`,_`,_>[TL,  qid("R" + N1 + ":Robot"), N2, '|_`,_|['1.Nat, '_`,_[N5, TL, TL1]],  qid("PS" +  N4 + ":PendingSet")] , rb-inv-RuleTermR1(TL1, N1 + "0", '_+_[N2, TL],  N3 + "0", N4 + "0", (N5, TL)) .
+
+ eq rb-inv-RuleTermR1(('_`,_[TL], TL1), N1, N2, N3, N4, N5) = '_`,_[rb-inv-RuleTermR1((TL,TL1),  N1, N2, N3, N4, N5)] .
+ *** eq rb-inv-RuleTermR1((TL, '_`,_[TL1]), N1, N2, N3, N4, N5) = '_`,_[rb-inv-RuleTermR1((TL,TL1),  N1, N2, N3, N4, N5)] .
+
+ eq rb-inv-RuleTermR1((F[TL], TL1), N1, N2, N3, N4, N5) = if (rb-inv-checkMove1((TL1, N5)) or rb-inv-checkMove2((TL1, N5))) then '<_`,_`,_`,_`,_>[F[TL],  qid("R" + N1 + ":Robot"), N2, qid("P" +  N3 + ":Pending"),  qid("PS" +  N4 + ":PendingSet")] , rb-inv-RuleTermR1(TL1, N1 + "0", '_+_[N2, F[TL]],  N3 + "0", N4 + "0", (N5, F[TL])) else '<_`,_`,_`,_`,_>[F[TL],  qid("R" + N1 + ":Robot"), N2, qid("P" +  N3 + ":Pending"),  qid("PS" +  N4 + ":PendingSet")] , rb-inv-RuleTermR1(TL1, N1 + "0", '_+_[N2, F[TL]], N3 + "0", N4 + "0", (N5, F[TL])) fi [owise] .
+
+ *** eq rb-inv-RuleTermR1((F[TL], TL1), N1, N2, N3, N4, N5) = if (rb-inv-checkMove1((TL1, N5)) or rb-inv-checkMove2((TL1, N5))) then '<_`,_`,_`,_`,_>[F[TL],  qid("R" + N1 + ":Robot"), N2, qid("P" +  N3 + ":Pending"), 'add['|_`,_|['0.Nat, ('_`,_[getOut(TL1), (N5, F[TL])])], qid("PS" +  N4 + ":PendingSet")]] , rb-inv-RuleTermR1(TL1, N1 + "0", '_+_[N2, F[TL]],  N3 + "0", N4 + "0", (N5, F[TL])) else '<_`,_`,_`,_`,_>[F[TL],  qid("R" + N1 + ":Robot"), N2, qid("P" +  N3 + ":Pending"),  qid("PS" +  N4 + ":PendingSet")] , rb-inv-RuleTermR1(TL1, N1 + "0", '_+_[N2, F[TL]], N3 + "0", N4 + "0", (N5, F[TL])) fi [owise] .
+ 
 endfm
+
 
 mod RING is
  pr RING-TRANSFORMATION .
@@ -509,5 +690,155 @@ mod RING-INIT is
  => [QIL, < O : X@Database | output : nil, Atts >, (QIL'' QI QIL')] .
 endm
 
+set print attribute on .
+
+set print conceal on .
+
+***(
+set trace on .
+
+set trace eq off .
+
+set trace condition off .
+
+set trace substitution off .
+)
+
 loop rinit .
+
+
+(fmod ROBOT is
+     pr NAT .
+     sort Robot .
+     
+     op r_ : Nat ->  Robot [ctor] .
+endfm)
+
+(fmod CONFIG is
+     sort Seq .
+     sort Config .
+        
+     op empS : -> Seq [ctor] .    
+     op _`,_ : Seq Seq -> Seq [ctor assoc id: empS] .
+     
+     op `{_`} : Seq ->  Config [ctor ring] .
+endfm)
+
+
+(fmod PENDING is
+     pr CONFIG .
+     pr NAT .
+     
+     sort Pending .
+     sort PendingSet .
+     subsort Seq < Pending .
+     subsort Pending < PendingSet .
+
+     vars P P' : Pending .
+     var PS : PendingSet .
+     
+     op nil : -> Pending [ctor] .
+     op |_`,_| : Nat Seq  -> Pending [ctor] .
+     
+     op empPS : -> PendingSet [ctor] .    
+     op _;_ : PendingSet PendingSet -> PendingSet [ctor assoc comm id: empPS] .
+
+     op _in_ : Pending PendingSet -> Bool .  
+     eq P in nil = false .
+     eq P in (P' ; PS) = (P == P') or (P in PS) .
+
+     op add : Pending PendingSet -> PendingSet .
+     *** eq add(P, PS) = (P ; PS) . 
+
+     op del : Pending PendingSet -> PendingSet .
+     eq del(P, (P ; PS)) = PS .
+     
+endfm)
+
+(fmod CONFIG-FRAME is
+    pr CONFIG .
+    pr ROBOT .
+    pr PENDING .
+    pr NAT .
+    pr INT .
+    
+    sort TupleR .
+    subsort TupleR < Seq .
+    
+    op <_`,_`,_`,_`,_> : Int Robot Nat Pending PendingSet -> TupleR [ctor] .
+   
+endfm)
+
+(fmod RING-INTERVAL is
+    pr CONFIG .
+    pr NAT .
+    pr INT .
+    
+    subsort Int < Seq .
+
+    op _-> : Int -> Int .
+    op _<- : Int -> Int .
+   
+endfm)
+
+
+
+(fmod RING-FIX is
+    pr CONFIG .
+    
+    subsort Nat < Seq .
+   
+endfm)
+
+(fmod RING-LOC is
+    pr CONFIG .
+    pr ROBOT .
+    
+    sort Pair .
+    subsort Pair < Seq .
+    
+    op <_`,_> :  Robot Nat -> Pair [ctor] .
+    
+endfm)
+
+
+(fmod ROBOT-RING is
+     pr RING-INTERVAL .
+     pr RING-FIX .
+     pr RING-LOC .
+     
+endfm)
+
+
+(fmod ROBOT-RING-TRANS is
+     pr ROBOT-RING .
+     pr CONFIG-FRAME .
+     pr NAT .
+     pr INT .
+    
+
+     var S : Seq .
+     vars I I1 : Int .
+     vars N N1 N2 : Nat .
+
+     op numNodes : Seq -> Nat .
+     eq numNodes(empS) = 0 .
+     eq numNodes(( I , S)) = if I >= 0 then 1 + I + numNodes(S) else numNodes(S) fi .
+
+     op transfer : Config -> Config .
+     op transferSeq : Seq Nat Nat Nat -> Seq .
+     op transferMul : Int Int Nat Nat -> Seq .
+     eq transfer({S}) = { transferSeq(S, 0, 0, numNodes(S)) } .
+     eq transferSeq(empS, N1, N2, N) = empS .
+     eq transferSeq((I, S), N1, N2, N) = if I >= 0 then (< I, r (N1),  (N2 rem N), nil, empPS > ,  transferSeq(S, N1 + 1, N2 + I + 1, N)) else transferMul(I, I, N1, (N2 rem N)), transferSeq(S, N1 + (- I), N2, N) fi .
+     eq transferMul(I, I1, N1, N2) = if (I1 < 0) then (< I, r (N1), N2, nil, empPS > ,  transferMul(I, I1 + 1, N1 + 1, N2)) else empS fi .
+
+     op inv-Initial : Config -> Config .
+     op inv-Initial-Seq : Seq Nat Nat Nat -> Seq .
+     op inv-Initial-Mul : Int Int Nat Nat -> Seq .
+     eq inv-Initial({S}) = { inv-Initial-Seq(S, 0, 0, numNodes(S)) } .
+     eq inv-Initial-Seq(empS, N1, N2, N) = empS .
+     eq inv-Initial-Seq((I, S), N1, N2, N) = if I >= 0 then (< I, r (N1),  (N2 rem N), nil, empPS > ,  inv-Initial-Seq(S, N1 + 1, N2 + I + 1, N)) else inv-Initial-Mul(I, I, N1, (N2 rem N)), inv-Initial-Seq(S, N1 + (- I), N2, N) fi .
+     eq inv-Initial-Mul(I, I1, N1, N2) = if (I1 < 0) then (< I, r (N1), N2, nil, empPS > ,  inv-Initial-Mul(I, I1 + 1, N1 + 1, N2)) else empS fi .    
+endfm)
 
