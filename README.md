@@ -1,4 +1,4 @@
-# MR2-Maude
+# RSE-Maude
 The folder includes:
 1. The ring-specification environment - the file maude-ring.maude
 2. The manual of the environment.
