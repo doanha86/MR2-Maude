@@ -1,7 +1,15 @@
 RSE-Maude: A Ring-Specification Environment on top of Maude
 ===========================================================
 
-RSE-Maude is a
+RSE-Maude is a Full Maude extension for easily specifying robots algorithms in ring
+topologies. Its main features are:
+
+1. It provides a `ring` attribute that makes sequences work module symmetry and rotation.
+It also provides `cring` and `aring` for clockwise and anti-clockwise rings, respectively,
+which only work modulo rotation.
+2. It provides three different predefined ways to specify ring modules.
+3. It provides facilities for easily model-checking ring algorithm. In particular, it
+eases the verification of exploration algorithms.
 
 Getting the tool
 ----------------
