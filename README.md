@@ -38,9 +38,9 @@ For example,
 
 ```
 (mod SIMPLE-RING is
-         sort Seq .
-sort Config .
+         sorts Seq Config .
          op emp : -> Seq [ctor] .
+
          op __ : Seq Seq -> Seq [ctor assoc id: emp] .
          op <_> : Seq -> Config [ctor ring].
        endm)

@@ -1,0 +1,162 @@
+*** load model-checker.maude
+***
+*** Specification of Exclusive Perpetual Ring Exploration Algorithm
+***
+*** ---------------------  Basic Data Used-------------------------
+*** load model-checker.maude
+*** load full-maude.maude
+
+(fmod  PENDING is
+     pr INT .
+     
+     sort Pending .
+     sort PendingSet .
+     subsort Pending < PendingSet .
+
+     vars P P' : Pending .
+     var PS : PendingSet .
+     vars I1, I2, I3 : Int .
+
+     op nil : -> Pending [ctor] .
+     op `[_`,_`,_`] : Int Int Int -> Pending [ctor] .
+     
+     op _;_ : PendingSet PendingSet -> PendingSet [ctor comm assoc  id: nil] .
+
+     op _in_ : Pending PendingSet -> Bool .  
+     eq P in nil = false .
+     eq P in (P' ; PS) = (P == P') or (P in PS) .
+
+     op add : Pending PendingSet -> PendingSet .
+     eq add(P, PS) = (P ; PS) . 
+
+     op del : Pending PendingSet -> PendingSet .
+     eq del(P, (P ; PS)) = PS .
+
+     op move : Pending -> Int .
+     eq move(nil) = 0 .
+     eq move([I1, I2, I3]) = I3 . 
+     
+endfm)
+
+
+(fmod  NODE is
+     pr INT .
+     
+     sort Node .
+
+     op <_`,_`,_> : Int Pending Pending -> Node [ctor] .
+endfm)
+
+
+(fmod CONFIG is
+   
+     pr NODE .
+     pr PENDING .
+
+     sort Seq .
+     sort Config .
+     subsort Node < Seq .
+     
+     op empS : -> Seq [ctor] .    
+     op __ : Seq Seq -> Seq [ctor assoc  id: empS] .
+
+     op `{_`} : Seq -> Config [ctor ring] .
+    
+endfm)
+
+
+*** ---------------------  The algorithm ------------------------- 
+(mod EXPLORATION is
+
+     pr CONFIG .
+
+     
+     vars I1 I2 X Y Z : Int .
+     vars PX PX' PY PY' PZ PZ' P1 P1' P2 P2' : Pending .
+     var PS1 PS1' PS2 PS2' PSX PSY  PSZ : PendingSet .
+     vars C C' : Seq .
+     
+     rl[RL1] : {< 0, nil, PSX > < 2, PY, PSY > < Z, PZ, PSZ >} => {< 0, [0, Z, 1], PSX > < 2, PY, PSY > < Z, PZ, add([0, Z, 1], PSZ) >} .
+     rl[RL2] : {< 1, PX, PSX > < 2, nil, PSY > < Z, PZ, PSZ >} => {< 1, PX, add([2, 1, 1], PSX) > < 2, [2, 1, 1], PSY > < Z, PZ, PSZ >} .
+     rl[RL3] : {< 0, PX, PSX > < 3, PY,  PSY > < Z, nil, PSZ >} => {< 0, PX, PSX > < 3, PY, add([Z, 3, 1], PSY) > < Z, [Z, 3, 1], PSZ >} .
+     
+     crl[CR1] : {< 0, PX, PSX > < Y, PY, PSY > < Z, nil, PSZ >} => {< 0, PX, PSX > < Y, PY, add([Z, Y, 1], PSY) > < Z, [Z, Y, 1], PSZ >} if (Y <= Z) and (Y > 3) .
+     crl[CR2] : {< X, PX, PSX > < Y, PY, PSY > < Y, nil, PSZ >} => {< X, PX, PSX > < Y, PY, add([Y, Y, -1], PSY) > < Y, [Y, Y, -1], PSZ >} if (X =/= Y) and (X =/= 0) and (Y =/= 0) and (PY =/= [Y, Y, -1]) .
+     *** crl[CR2] : {< X, PX, PSX > < Y, nil, PSY > < Y, PZ, PSZ >} => {< X, PX, PSX > < Y, [Y, Y, -1], PSY > < Y, PZ, add([Y, Y, -1], PSZ) >} if (X =/= Y) and (X =/= 0) and (Y =/= 0) .
+     
+     crl[CR3] : {< X, PX, PSX > < Y, nil, PSY > < Z, PZ, PSZ >} => {< X, PX, add([Y, X, 1], PSX) > < Y, [Y, X, 1], PSY > < Z, PZ, PSZ >} if (X > 0) and (Y > X) and (Z > Y) .
+     rl[CR4] : {< 0, nil, PSX > < 0, PY, PSY > < Z, PZ, PSZ >} => {< 0, [0, Z, 1], PSX > < 0, PY, PSY > < Z, PZ, add([0, Z, 1],PSZ) >} .
+     *** rl[CR4] : {< 0, PX, PSX > < 0, PY, PSY > < Z, nil, PSZ >} => {< 0, PX, PSX > < 0, PY, add([Z, 0, -1], PSY) > < Z, [Z, 0, -1], PSZ >} .
+    
+     rl[CR5] : {< 0, PX, PSX > < 1, PY, PSY > < Z, nil, PSZ >} => {< 0, PX, PSX > < 1, PY, add([Z, 1, -1], PSY) > < Z, [Z, 1, -1], PSZ >} .
+
+
+     crl[Pending] : {C < I1, P1, PS1 > < I2, P2, PS2 > C'} => {C < I1 + 1, nil, PS1 > < I2 - 1, P2, del(P1, PS2) > C'} if ((P1 in PS2) and (move(P1) == 1)) .    
+     crl[Pending] : {C < I1, P1, PS1' > < I2, P2, PS2' > C'} => {C < I1 - 1, nil, PS1' > < I2 + 1, P2, del(P1, PS2') > C'} if (P1 in PS2') and (move(P1) == -1) .
+     
+     
+
+endm)
+
+
+
+*** Define the semantics of the state predicates.
+(mod EXPLORATION-PREDS is
+    pr EXPLORATION .
+    inc SATISFACTION .
+    subsort Config < State .
+
+    op mutual :  -> Prop .
+    op checkMutual : Config -> Bool .   
+
+    vars I1 : Int .
+    var P1 : Pending .
+    var  PS1 : PendingSet .
+    vars C C' : Seq .
+
+    ***  The state predicate for telling whether there are two or more robots located in the same node. 
+    eq { C } |= mutual = checkMutual({ C }) .
+    eq checkMutual({ empS }) = false .
+    eq checkMutual({ < I1, P1, PS1 > C }) = (I1 == - 1) or checkMutual({ C }) .
+    
+endm)
+
+*** Model check two properties.
+(mod M-CHECK is
+    pr EXPLORATION-PREDS .
+    inc MODEL-CHECKER .
+    inc LTL-SIMPLIFIER .
+
+    ops initial1 initial2 initial3 initial4 initial5 initial6  : -> Config .
+      
+    *** R2,F2,R1,Fz
+    eq initial1 = { < 0, nil, nil > < 2, nil, nil > < 5, nil, nil > } .
+    
+    *** R1,F1,R1,F2,R1,Fz
+    eq initial2 = { < 1, nil, nil > < 2, nil, nil > < 4, nil, nil > } .
+   
+    
+    *** R2,F3,R1,Fz
+    eq initial3 = { < 0, nil, nil > < 3, nil, nil > < 4, nil, nil > } .
+   
+
+    *** R1,Fx, R1, Fy,R1,Fy
+    eq initial4 = { < 3, nil, nil > < 3, nil, nil > < 1, nil, nil > } .
+  
+    *** R3,Fz
+    eq initial5 = { < 0, nil, nil > < 0, nil, nil > < 7, nil, nil > } .
+
+    *** R2,F1,R1,Fz
+    eq initial6 = { < 0, nil, nil > < 1, nil, nil > < 6, nil, nil > } .
+
+endm)
+
+
+ 
+  (red modelCheck(initial1, []~ (mutual)) .)
+  (red modelCheck(initial2, []~ (mutual)) .)
+  (red modelCheck(initial3, []~ (mutual)) .)
+  (red modelCheck(initial4, []~ (mutual)) .)
+  (red modelCheck(initial5, []~ (mutual)) .)
+  (red modelCheck(initial6, []~ (mutual)) .)
+ 

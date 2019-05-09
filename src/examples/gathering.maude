@@ -1,0 +1,1335 @@
+*** load full-maude.maude .
+***
+*** Specification of Gatthering on Rings under the Look-Compute-Move Model Algorithm
+***
+*** ---------------------  Basic Data Used-------------------------
+(fmod SEQUENCE {X :: TRIV, Y :: TRIV} is
+
+     sort Seq .
+     sort Node .
+	
+     subsort Node < Seq .
+     op <_`,_> : X$Elt Y$Elt -> Node [ctor] .
+     op empS : -> Seq [ctor] .    
+     op __ : Seq Seq -> Seq [ctor assoc id: empS] .   	
+endfm)
+
+(fmod COLL&SEQUENCE {X :: TRIV, Y :: TRIV, Z :: TRIV} is
+
+     sort Coll&seq .
+     sort Coll&node .
+	
+     subsort Coll&node < Coll&seq .
+     op <_`,_`,_> : X$Elt Y$Elt Z$Elt -> Coll&node [ctor] .
+     op empCS : -> Coll&seq  [ctor] .    
+     op __ : Coll&seq  Coll&seq  -> Coll&seq  [ctor assoc id: empCS] .   	
+endfm)
+
+(fmod INT&ERR is
+     pr INT .
+     sort Int&err .
+     subsort Int < Int&err .
+     op err : -> Int&err .
+endfm)
+
+(fmod PENDING is
+     sort Pending .
+     ops FC FC- nil : -> Pending .
+endfm)
+
+
+(fmod COLL is
+    sort Coll .
+    ops N S NS CG none : -> Coll .
+endfm)
+
+(view Colls from TRIV to COLL is
+        sort Elt to Coll .
+endv)
+
+(view Pendings from TRIV to PENDING is
+        sort Elt to Pending .
+endv)
+
+(fmod COLL&CONFIG is
+     inc COLL&SEQUENCE{Int, Pendings, Colls} .
+     sort Coll&config .
+     op `{_`} : Coll&seq -> Coll&config [ring ctor].
+ endfm)
+
+
+*** Comfigurations
+
+(fmod CONFIG is
+     inc SEQUENCE{Int, Pendings} .
+     
+     sort Config .
+     op `{_`} : Seq -> Config [ctor ring].
+
+     vars N1 N2 : Int .
+     vars P P1 P2 : Pending .
+     vars C C1 C2 : Config .
+     vars S S1 S2 : Seq .
+     vars ND1 ND2 : Node .
+     
+  
+     op _>*_ : Int Int -> Bool .
+     op _<*_ : Int Int -> Bool .
+     op _=*_ : Int Int -> Bool [comm] .
+     op _=/*_ : Int Int -> Bool [comm] .
+     
+
+     eq N1 >* N2 = if (N1 >= 0) and (N2 >= 0) then (N1 > N2) else ((N1 >= 0) and (N2 < 0)) fi .
+     eq N1 <* N2 = if (N1 >= 0) and (N2 >= 0) then (N1 < N2) else ((N1 < 0) and (N2 >= 0)) fi .
+     eq N1 =* N2 = if (N1 >= 0) and (N2 >= 0) then (N1 == N2) else ((N1 < 0) and (N2 < 0)) fi .
+     eq N1 =/* N2 = if (N1 >= 0) and (N2 >= 0) then (N1 =/= N2) else ((N1 >= 0 and N2 < 0)
+     	       	       or (N1 < 0 and N2 >= 0)) fi .
+
+     op _>_ : Node Node -> Bool .
+     op _<_ : Node Node -> Bool .
+     op _>*_ : Node Node -> Bool .
+     op _<*_ : Node Node -> Bool .
+    
+     op _=_ : Node Node -> Bool [comm] .
+     op _=/_ : Node Node -> Bool [comm] .
+     op _=*_ : Node Node -> Bool [comm] .
+     op _=/*_ : Node Node -> Bool [comm] .
+     
+
+
+     eq < N1, P1 > > < N2, P2 > = (N1 > N2) .
+     eq < N1, P1 > < < N2, P2 > = (N1 < N2) .
+     eq < N1, P1 > >* < N2, P2 > = (N1 >* N2) .
+     eq < N1, P1 > <* < N2, P2 > = (N1 <* N2) .
+     
+     eq ((< N1, P1 >) = (< N2, P2 >)) = (N1 == N2) .   
+     eq ((< N1, P1 >) =/ (< N2, P2 >)) = (N1 =/= N2) .
+     eq ((< N1, P1 >) =* (< N2, P2 >)) = (N1 =* N2) .
+     eq ((< N1, P1 >) =/* (< N2, P2 >)) = (N1 =/* N2) .
+
+     
+     op _=_ : Config Config -> Bool [comm] .
+     op _=_ : Seq Seq -> Bool [comm] .
+     eq ({S1} = {S2})  = (S1 = S2) . 
+     eq (empS = empS) = true .
+     eq (ND1 S1 = ND2 S2) = (ND1 = ND2) and ( S1 = S2) .
+     
+
+     op _=*_ : Config Config -> Bool [comm] .
+     op _=*_ : Seq Seq -> Bool [comm] .
+     eq ({S1} =* {S2}) = (S1 =* S2) . 
+     eq (empS =* empS) = true .
+     eq (ND1 S1 =* ND2 S2) = (ND1 =* ND2) and ( S1 =* S2) .
+
+     op _=/_ : Config Config -> Bool [comm] .
+     op _=/_ : Seq Seq -> Bool [comm] .
+     eq {S1} =/ {S2}  = (S1 =/ S2) . 
+     eq empS =/ empS = false .
+     eq (ND1 S1 =/ ND2 S2) = (ND1 =/ ND2) or ( S1 =/ S2) .
+
+     op _=/*_ : Config Config -> Bool [comm] .
+     op _=/*_ : Seq Seq -> Bool [comm] .
+     eq {S1} =/* {S2}  = (S1 =/* S2) . 
+     eq empS =/* empS = false .
+     eq ND1 S1 =/* ND2 S2 = (ND1 =/* ND2) or ( S1 =/* S2) .   
+     
+endfm)
+*** List of Comfigurations
+(fmod CONFIGLIST is
+     pr CONFIG .
+     
+     sort ConfigList .
+     subsort Seq < ConfigList .
+
+     op empL : -> ConfigList [ctor] .
+     op _;_ : ConfigList ConfigList -> ConfigList [ctor assoc id: empL] .
+     
+endfm)
+
+
+(fmod CONFIG-CALCULATION is
+     pr CONFIGLIST .
+     pr INT&ERR .
+     pr NAT .
+
+     vars S S1 S2 S3 : Seq .
+     vars ND ND1 ND2 : Node .
+     vars C C1 C2 C3 : Config .
+     var CL CL1 CL2 : ConfigList .
+     var N : Nat .
+     vars I I1 I2 I3 I4 I5 : Int .
+     vars P P1 P2 P3 P4 P5 : Pending .
+     
+     op getFirstQi : Config -> Int&err .
+     eq getFirstQi({< I, P > S}) = I .
+     eq getFirstQi({S}) = err [owise] .
+     
+
+     *** The function to get the first value of the second pair of a configuration
+     op getSecondQi : Config -> Int&err .
+     eq getSecondQi({< I1, P1 > < I2, P2 > S}) = I2 .
+     eq getSecondQi({S}) =  err [owise] .
+
+     *** The function to get the first value of the last pair of a configuration
+     op getLastQi : Config -> Int&err .
+     eq getLastQi({S < I, P >}) = I . 
+     eq getLastQi({S}) =  err [owise] .
+
+     *** The function to get the first value of the Qj-1 pair of a configuration
+     op getQj-1 : Config -> Int&err .
+     eq getQj-1({S < I, P > < I1, P1 >}) = I . 
+     eq getQj-1({S}) =  err [owise] .
+
+
+     *** The function to get the first value of the Q2 pair of a configuration 
+     op getQ2 : Config -> Int&err .
+     eq getQ2({< I, P > < I1, P1 > < I2, P2 > S}) = I2 . 
+     eq getQ2({S}) =  err [owise] .
+     
+     *** The function to get the first value of the Q4 pair of a configuration 
+     op getQ4 : Config -> Int&err .
+     eq getQ4({< I, P > < I1, P1 > < I2, P2 > < I3, P3 > < I4, P4 > S}) = I4 . 
+     eq getQ4({S}) =  err [owise] .
+
+     *** The function to get the first value of the Q5 pair of a configuration
+     op getQ5 : Config -> Int&err .
+     eq getQ5({< I, P > < I1, P1 > < I2, P2 > < I3, P3 > < I4, P4 > < I5, P5 > S}) = I5 . 
+     eq getQ5({S}) =  err [owise] .
+
+     *** The function to get the first value of the Qj-2 pair of a configuration 
+     op getQj-2 : Config -> Int&err .
+     eq getQj-2({S < I, P > < I1, P1 > < I2, P2 >}) = I . 
+     eq getQj-2({S}) =  err [owise] .
+
+
+      *** The function to get the first value of the Qj-3 pair of a configuration 
+     op getQj-3 : Config -> Int&err .
+     eq getQj-3({S < I, P > < I1, P1 > < I2, P2 > < I3, P3 >}) = I . 
+     eq getQj-3({S}) =  err [owise] .
+
+      *** The function to get the first value of the Qj-4 pair of a configuration 
+     op getQj-4 : Config -> Int&err .
+     eq getQj-4({S < I, P > < I1, P1 > < I2, P2 > < I3, P3 > < I4, P4 >}) = I . 
+     eq getQj-4({S}) =  err [owise] .
+
+
+     *** The function to get the number of pairs of a configuration
+     op numPairs : Config -> Nat .
+     eq numPairs({empS}) = 0 .
+     eq numPairs({ND S}) = 1 + numPairs({S}) .
+
+     *** The function to get the number of robots   
+     op numRobots : Config -> Nat .
+     eq numRobots({empS}) = 0 .
+     eq numRobots({< I, P > S}) = if I >= 0 then 1 + numRobots({S})
+     		     	    	  else (abs(I) - 1) + numRobots({S}) fi .
+
+     *** The function to get the number of single robots  (M) 
+     op numSigRobots : Config -> Nat .
+     eq numSigRobots({empS}) = 0 .
+     eq numSigRobots({< I, P > S}) = if I >= 0 then 1 + numSigRobots({S})
+     			       	     else (numSigRobots({S}) - 1) fi .
+				     
+     
+     *** The function to get the number of nodes of a ring (a configuration)
+     op numNodes : Config -> Nat .
+     eq numNodes({empS}) = 0 .
+     eq numNodes({< I, P > S}) = if I >= 0 then 1 + I + numNodes({S}) else numNodes({S}) fi .
+
+     *** The function to get the number of nodes occupied by robots of a ring (a configuration) 
+     op numNodesoccupied : Config -> Nat .
+     eq numNodesoccupied({empS}) = 0 .
+     eq numNodesoccupied({< I, P > S}) = if I >= 0 then 1 + numNodesoccupied({S})
+     			       	       	 else numNodesoccupied({S}) fi .
+
+     *** The function to get the number of multiplicities of a ring (a configuration)
+     op numMul : Config -> Nat .
+     eq numMul({empS}) = 0 .
+     eq numMul({< I, P > S}) = if I < 0 then 1 + numMul({S}) else numMul({S}) fi .
+
+     *** The function to check a configuration without any multiplicities
+     op checkNoneMul : Config -> Bool .
+     eq checkNoneMul(C) = (numMul(C) == 0) .
+
+     *** The function to revert a sequence
+     op revert : Seq -> Seq .
+     eq revert(empS) = empS .
+     eq revert(S ND) = ND revert(S) .
+     
+
+     *** The function to get the configuration C- of a configuration
+     op c- : Config -> Config .
+     eq c-({empS}) = {empS} .
+     eq c-({ND S}) = {ND revert(S)} .
+     
+   
+
+     *** The function to get the configuration of the opposite view of a robot 
+     op viewOpp : Config -> Config .
+     eq viewOpp({S}) = {revert(S)} .
+
+     *** The function to get the configuration of the Cj  a robot
+     op cj : Config -> Config .
+     eq cj({empS}) = {empS} .
+     eq cj({S ND}) = {ND S} .
+
+     *** The function to get the configuration of the C'  a robot 
+     op c' : Config -> Config .
+     ceq c'(C) = {empS} if numPairs(C) < 2 .
+     eq c'({< I1, P1 > < I2, P2 > S}) = {< I1 + 1, P1 > < I2 - 1, P2 > S} [owise] .
+
+     *** The function to get the configuration of the C+  a robot
+     op c+ : Config -> Config .
+     ceq c+(C) = {empS} if numPairs(C) < 2 .
+     eq c+({< I1, P1 > < I2, P2 > S}) = {< I1 - 1, P1 > < I2 + 1, P2 > S} [owise] .
+
+     *** The function to get the configuration of the C''  a robot 
+     op c'' : Config -> Config .
+     ceq c''(C) = {empS} if numPairs(C) < 2 .
+     eq c''({S < I1, P1 > < I2, P2 >}) = {S < I1 - 1, P1 > < I2 + 1, P2 >} [owise] .
+
+  
+     *** The function to genarate all Ci configurations of a configuration, except C0 
+     op lisCi : Config ->  ConfigList .
+     op calCi : Seq Nat -> ConfigList .
+     eq lisCi({empS}) = empL .
+     eq lisCi({ND S}) = calCi(S ND, numPairs({S ND})) .
+     eq calCi(S, 2) = S .
+     eq calCi(ND S, N) = (ND S) ; calCi(S ND, sd(N, 1)) .
+     
+
+     op lenS : Seq -> Nat .
+     eq lenS(empS) = 0 .
+     eq lenS(< I, P > S) = (1 + I) + lenS(S)  . 
+
+     *** The function to check whether a configuration is periodic or not
+     op checkPer : Config -> Bool .
+     op checkPer1 : Config ConfigList -> Bool .
+     eq checkPer(C) = checkPer1(C, lisCi(C)) .
+     eq checkPer1(C, empL) = false .
+     eq checkPer1({ S }, S1 ; CL) = ({ S } =* { S1 }) or checkPer1({ S }, CL) .
+
+
+
+     *** The function to check whether a configuration is symmetric or not
+     op checkSym : Config -> Bool .
+     op checkSym1 : Config ConfigList -> Bool .
+     eq checkSym({ S }) = checkSym1({ S }, S ; lisCi({ S })) .
+     eq checkSym1(C, empL) = false .
+     eq checkSym1({ S }, S1 ; CL) = ({ S } =* c-({ S1 })) or checkSym1({ S }, CL) .
+
+ 
+    
+
+     *** The function to check whether a configuration is lexicographical greater then another or not
+     op greater : Config Config -> Bool .
+     eq greater({empS}, {empS}) = false .
+     eq greater({ ND1 S1 }, {empS}) = false .
+     eq greater({empS}, { ND2 S2 }) = false .
+     eq greater({ND1 S1}, {ND2 S2}) = if (ND1 >* ND2) then true else
+     	if (ND1 =* ND2) then greater({S1}, {S2}) else false fi fi .
+	
+	
+
+
+     *** The function to get the lexiographical configuration between two configurations
+     op min : Config Config -> Config [assoc comm] .
+     eq min(C1, C2) = if greater(C1, C2) then C2 else C1 fi .
+
+
+     *** The function to get the lexiographical minimum configuration in a list of configurations
+      op minList : ConfigList -> Config .
+      op minList1 : Config ConfigList -> Config .
+      eq minList(empL) = {empS} .
+      eq minList(S ; CL) = minList1(min({ S }, c-({ S })), CL) .
+      eq minList1(C, empL) = C .
+      eq minList1(C, S1 ; CL) = minList1(min(C, min({ S1 }, c-({ S1 }))), CL) .
+
+ 	     
+
+     *** The function to get the supermin configuration of a configuration
+     op superminCf : Config -> Config .
+     eq superminCf({ S }) = minList(S ; lisCi({ S })) .
+
+     *** The function to count the number of supermins of a configuration
+     op iC : Config -> Nat .     
+     op counterSupermin : Config ConfigList -> Nat .
+     eq iC({ S }) = counterSupermin(superminCf({ S }), (S ; lisCi({ S }))) .
+     eq counterSupermin(C, empL) = 0 . 
+     eq counterSupermin(C, S1 ; CL) = if (C =* { S1 }) or (C =* c-({ S1 })) then 1 + counterSupermin(C, CL)
+     	else counterSupermin(C, CL) fi .
+
+   
+     *** The function to check whether a configuration is a edge-edge symmetry comfiguration or not
+     op checkSymEd : Config -> Bool .
+     op checkSymEd1 : ConfigList -> Bool .   
+     eq checkSymEd({ S }) = checkSymEd1(S ; lisCi({ S })) .
+     eq checkSymEd1(empL) = false .
+     eq checkSymEd1(S ; CL) = if ({ S } =* c-({ S })) and ((getFirstQi({ S }) rem 2) == 0)
+     	and ((numNodes({ S }) rem 2) == 0) then true else checkSymEd1(CL) fi .
+
+
+
+      *** The function to check whether k is existing or not
+     op checkK : Config -> Bool .
+     op checkK1 : ConfigList -> Bool .   
+     eq checkK({ S }) = checkK1(S ; lisCi({ S })) .
+     eq checkK1(empL) = false .
+     eq checkK1(S ; CL) = ((checkSym(c'({ S })) and (getFirstQi({ S }) rem 2) == 0)
+     	or (checkSym(c+({ S })) and (getSecondQi({ S }) rem 2) == 0)) or checkK1(CL) .
+
+
+     *** The function to check whether a configuration is a allowed symmetry or not
+     op checkAllowedSym : Config -> Bool .
+     eq checkAllowedSym(C) = checkSym(C) and not checkSymEd(C) and not checkPer(C) .
+
+     op undoCon : Config -> Config .
+     eq undoCon({empS}) = {empS} .
+     eq undoCon({< I1, P1 > S < I2, P2 >}) = {< I1 + 1, P1 > S < I2 - 1, P2 >} .
+
+     op undoCon1 : Config -> Config .
+     eq undoCon1({empS}) = {empS} .
+     eq undoCon1({< I1, P1 > < I2, P2 > S}) = {< I1 + 1, P1 > < I2 - 1, P2 > S} .
+     
+
+     *** The function to calculate C^ (M)
+     op c^ : Config -> Config .
+     ceq c^({S1 < I1, P1 > < I2, P2 > < I3, P3 > S2}) = if (I1 > I3)
+     	 then {S1 < I1 - 1, P1 > < I2 + 1, P2 > < I3, P3 > S2}
+         else  (if (I1 < I3) then {S1 < I1, P1 > < I2 + 1, P2 > < I3 - 1, P3 > S2}
+	       else {empS} fi) fi       
+     	 if (({< I2, P2 > < I3, P3 > S2 S1 < I1, P1 >} = superminCf({S1 < I1, P1 > < I2, P2 >
+	 < I3, P3 > S2})) or (c-({< I2, P2 > < I3, P3 > S2 S1 < I1, P1 >}) = superminCf({S1
+	 < I1, P1 > < I2, P2 > < I3, P3 > S2}))) .
+     eq c^(C) = {empS} [owise] .
+
+     op checkRed : Config -> Config .     
+     eq checkRed(C) = if (c^(C) =/= {empS}) and checkAllowedSym(c^(C)) then c^(C) else {empS} fi .
+
+
+     *** The function to calculate alternative supermin configuration (M)
+     op alterSupermin : Config -> Config .
+     op alterList : Config -> ConfigList .
+     op alterList1 : Config Nat Config ->  ConfigList .
+     eq alterSupermin(C) = minList(alterList(C)) .
+     eq alterList({empS}) = empL .
+     eq alterList({ND S}) = alterList1({ND S}, numPairs({ND S}), superminCf({ND S})) .
+     eq alterList1({ S }, 1, C1) = if (({ S } =/* C1) and ({ S } =/ c-({ S })) and (c-({ S }) =/* C1)) then  S  else empL fi .
+     eq alterList1({ND S}, N, C1) = if (({ND S} =/* C1) and ({ND S} =/* c-({ND S})) and (c-({ND S}) =/* C1))
+     	then ND S alterList1({S ND}, sd(N, 1), C1) else  alterList1({S ND}, sd(N, 1), C1) fi .
+
+     *** The function defines W1 configuration
+     op w1 : Config -> Bool .
+     eq w1(C) = checkNoneMul(C) and checkAllowedSym(C) and ((numRobots(C) rem 2) =/= 0 ) .
+
+     *** The function defines W2 configuration
+     op w2 : Config -> Bool .
+     eq w2(C) = checkNoneMul(C) and (numRobots(C) == 4) .
+     
+     *** The function defines W3 configuration
+     op w3 : Config -> Bool .
+     eq w3(C) = checkNoneMul(C) and (numRobots(C) == 6) .
+
+
+     ***  The function to check whether a configuration has only one supermin of size 0 or not
+     op superOnlySize0 : Config -> Bool .
+     eq superOnlySize0(C) = (iC(C) == 1) and (getFirstQi(superminCf(C)) == 0) .
+
+
+
+     ***  The function to count the interval with size 0, but not supermin
+     op numInterSize0 : Config -> Nat .
+     op numInterSize01 : ConfigList Config -> Nat .   
+     eq numInterSize0({ S }) = numInterSize01(S ; lisCi({ S }), superminCf({ S })) .
+     eq numInterSize01(empL, C1) = 0 .
+     eq numInterSize01(S ; CL, C1) = if (getFirstQi({ S }) == 0) and (({ S } =/* C1) and (c-({ S }) =/* C1))
+     	then 1 + numInterSize01(CL, C1) else numInterSize01(CL, C1) fi .
+
+
+
+      ***  The function to  check whether two supermin divided by one interval of even size or not
+     op divIntervalEven : Config -> Bool .
+     op divIntervalEven1 : Config ConfigList -> Bool .
+     eq divIntervalEven({ S }) = divIntervalEven1(superminCf({ S }), S ; lisCi({ S })) .
+     ceq divIntervalEven1(C, CL1 ; S1 ; S2 ; S3 ; CL2) = true if (({ S1 } =* C) or (c-({ S1 }) =* C)) and (({ S3 } =* C)
+     	 or (c-({ S3 }) =* C)) and ((getFirstQi({ S2 }) rem 2) == 0) .
+     ceq divIntervalEven1(C, S2 ; S3 ; CL2 ; S1) = true if (({ S1 } =* C) or (c-({ S1 }) =* C)) and (({ S3 } =* C)
+     	 or (c-({ S3 }) =* C)) and ((getFirstQi({ S2 }) rem 2) == 0 ) .
+     ceq divIntervalEven1(C, S3 ; CL2 ; S1 ; S2) = true if (({ S1 } =* C) or (c-({ S1 }) =* C)) and (({ S3 } =* C)
+     	 or (c-({ S3 }) =* C)) and ((getFirstQi({ S2 }) rem 2) == 0 ) .
+     eq divIntervalEven1(C, CL) = false [owise] .
+
+
+  
+      ***  The function to  check whether two supermin divided by one interval of  size 0 or not (M)
+     op divIntervalEven0 : Config -> Bool .
+     op divIntervalEven01 : Config ConfigList -> Bool .
+     eq divIntervalEven0({ S }) = divIntervalEven01(superminCf({ S }), S ; lisCi({ S })) .
+     ceq divIntervalEven01(C, CL1 ; S1 ; S2 ; S3 ; CL2) = true if (({ S1 } =* C) or (c-({ S1 }) =* C))
+     	 and (({ S3 } =* C) or (c-({ S3 }) =* C)) and (getFirstQi({ S2 }) == 0) .
+     eq divIntervalEven01(C, CL) = false [owise] .
+
+
+     *** The function defines W4 configuration
+     op w4 : Config -> Bool .
+     eq w4(C) = checkNoneMul(C) and checkAllowedSym(C) and (numRobots(C) > 6)
+     	and (numRobots(C) rem 2 == 0) and (getFirstQi(superminCf(C)) == 0)
+	and  ((iC(C) == 1 and numInterSize0(C) == 0) or (iC(C) == 2
+	and ((numInterSize0(C) == 0 and divIntervalEven(C)) or (numInterSize0(C) == 1 and divIntervalEven0(C))))) . 
+
+     *** The function defines W5 configuration (M)
+     op w5 : Config -> Bool .
+     eq w5(C) = checkNoneMul(C) and checkAllowedSym(C) and (numRobots(C) > 6)
+     	and ( numRobots(C) rem 2 == 0) and (((getFirstQi(superminCf(C)) == 0)
+	and (iC(C) == 1) and numInterSize0(C) > 0) or (((getFirstQi(superminCf(C)) == 0)
+	and (iC(C) == 2)) and ((divIntervalEven0(C) and (numInterSize0(C) > 1)) or (not divIntervalEven0(C)
+	and (numInterSize0(C) > 0))) and (divIntervalEven(C)))) .
+
+      *** The function to count the number of interval of size 0, between two interval of equal size (M)
+     op numInterval0Eq : Config -> Nat .     
+     op numInterval0Eq1 : ConfigList -> Nat .
+     op checkBetEqua : Config -> Bool .
+     eq numInterval0Eq({ S }) = numInterval0Eq1(S ; lisCi({ S })) .
+     eq numInterval0Eq1(empL) = 0 . 
+     eq numInterval0Eq1(S1 ; CL) = if checkBetEqua({ S1 }) then 1 + numInterval0Eq1(CL)
+     	else numInterval0Eq1(CL) fi .
+     ceq checkBetEqua(C) =  false if numRobots(C) < 3 .
+     eq checkBetEqua({< I1, P1 > < I2, P2 > S < I3, P3 >}) =  (I1 == 0) and (I2 == I3) [owise] .
+
+     op numInterval0 : Config -> Nat .
+     eq numInterval0({empS}) = 0 .
+     eq numInterval0({< I, P > S}) = if (I == 0) then 1 + numInterval0({S}) else numInterval0({S}) fi .
+
+
+      *** The function defines W6a configuration (M)
+     op w6a : Config -> Bool .
+     eq w6a(C) = checkNoneMul(C) and (not checkSym(C)) and (numRobots(C) > 6)
+     	and (numRobots(C) rem 2 == 0) and (numInterval0(C) == 1) and (numInterval0Eq(C) == 1) .
+
+      *** The function defines W6b configuration (M)
+     op w6b : Config -> Bool .
+     eq w6b(C) = checkNoneMul(C) and (not checkSym(C)) and (numRobots(C) > 6)
+     	and ( numRobots(C) rem 2 == 0) and (numInterval0(C) == 2) and (numInterval0Eq(C) == 1) .
+
+      *** The function to count the number of two intervals of size 0, separated by only one even interval
+     op numInterval20 : Config -> Nat .     
+     op numInterval201 : ConfigList -> Nat .
+     op checkBetEqua20 : Config -> Bool .
+     eq numInterval20({S}) = numInterval201(S ; lisCi({S})) .
+     eq numInterval201(empL) = 0 . 
+     eq numInterval201(S1 ; CL) = if checkBetEqua20({S1}) then 1 + numInterval201(CL) else numInterval201(CL) fi .
+     ceq checkBetEqua20(C) =  false if numPairs(C) < 3 .
+     eq checkBetEqua20({< I1, P1 > < I2, P2 > < I3, P3 > S}) =  (I2 rem 2 == 0) and (I1 == 0) and (I3 == 0) [owise] .
+
+     
+     *** The function defines W6c configuration
+     op w6c : Config -> Bool .
+     eq w6c(C) = checkNoneMul(C) and (not checkSym(C)) and (numRobots(C) > 6)
+     	and ( numRobots(C) rem 2 == 0) and (numInterval0(C) == 2) and (numInterval20(C) == 1) .
+
+     *** The function defines W6d configuration
+     op w6d : Config -> Bool .
+     eq w6d(C) = checkNoneMul(C) and (not checkSym(C)) and (numRobots(C) > 6)
+     	and ( numRobots(C) rem 2 == 0) and (numInterval0(C) == 3) and (numInterval20(C) == 1) .
+
+
+     *** The function to count the number of three consecutive intervals of size 0
+     op checkThreeConInterSize0 : Config -> Nat .
+     op checkThreeConInterSize01 : ConfigList -> Nat .
+     op checkThreeCon : Config -> Bool .
+     eq checkThreeConInterSize0({S}) = checkThreeConInterSize01(S ; lisCi({S})) .
+     eq checkThreeConInterSize01(empL) = 0 .
+     eq checkThreeConInterSize01(S ; CL) = if checkThreeCon({S})
+     	then 1 + checkThreeConInterSize01(CL) else checkThreeConInterSize01(CL) fi .
+     ceq checkThreeCon(C) = false if (numPairs(C) < 3) .
+     eq checkThreeCon({< I1, P1 > < I2, P2 > < I3, P3 > S}) =  (I1 == 0) and (I2 == 0) and (I3 == 0) [owise] .
+
+
+     *** The function defines W6e configuration
+     op w6e : Config -> Bool .
+     eq w6e(C) = (not checkSym(C)) and (numRobots(C) > 6) and ( numRobots(C) rem 2 == 0)
+     	and (numInterval0(C) == 3) and (checkThreeConInterSize0(C) == 1) .
+
+     *** The function defines W6f configuration (M)
+     op w6f : Config -> Bool .
+     eq w6f(C) = checkNoneMul(C) and (not checkSym(C)) and (numRobots(C) > 6)
+     	and ( numRobots(C) rem 2 == 0) and (numInterval0(C) == 4) and (checkThreeConInterSize0(C) == 1) .
+
+     *** The function defines W6 configuration (M)
+     op w6 : Config -> Bool .
+     eq w6(C) = w6a(C) or w6b(C) or w6c(C) or w6d(C) or w6e(C) or w6f(C) .
+
+     *** The function defines W7 configuration (M)
+     op w7 : Config -> Bool .
+     eq w7(C) = checkNoneMul(C) and ((not w1(C)) and (not w2(C)) and (not w3(C))
+     	and (not w4(C)) and (not w5(C)) and (not w6(C))) .
+
+     eq invert(ND S) = invert(S) ND .
+     
+endfm)
+
+
+*** Have not yet considered about multiplicity
+(mod PENDING-MOVE is
+   pr CONFIG-CALCULATION .
+   vars S S1 S2 : Seq .
+   vars I I1 I2 I3 : Int .
+   var P P1 P2 P3 : Pending .
+
+   *** Rules
+   *** rl [pending] : {< I, P >} => {< I, nil >} .
+   crl [FC11-pending] : {< I1, FC > < I2, P2 > S < I3, P3 >} => {< I2 - 1, P2 > S < I3 + 1, P3 >}
+       if (I1 == 0 and I2 < 0) .
+   crl [FC21-pending] : {< I1, FC > < I2, P2 > S < I3, P3 >} => {< I1 - 1, nil > < I2, P2 > S < I3 + 1, P3 >}
+       if not (I1 == 0 and I2 < 0) .
+       
+   crl [FC12-pending] : {S1 < I1, P1 > < I2, FC > < I3, P3 > S2} =>  {S1 < I1 + 1, P1 > < I3 - 1, P3 > S2}
+       if (I2 == 0 and I3 < 0) .
+   crl [FC22-pending] : {S1 < I1, P1 > < I2, FC > < I3, P3 > S2} =>  {S1 < I1 + 1, P1 > < I2 - 1, nil > < I3, P3 > S2}
+       if not (I2 == 0 and I3 < 0) .
+       
+   crl [FC13-pending] : {< I3, P3 > S < I1, P1 > < I2, FC >} =>  {< I3 - 1, P3 > S < I1 + 1, P1 >}
+       if (I2 == 0 and I3 < 0) .   
+   crl [FC23-pending] : {< I3, P3 > S < I1, P1 > < I2, FC >} =>  {< I3, P3 > S < I1 + 1, P1 > < I2 - 1, nil >}
+       if not (I2 == 0 and I3 < 0) .
+       
+   crl [FC-11-pending] : {< I1, FC- > S < I2, P2 > < I3, P3 >} => {< I1 + 1, nil > S < I2 - 1, P2 > }
+       if (I3 == 0) and (I2 < 0) .
+   crl [FC-21-pending] : {< I1, FC- > S < I2, P2 > < I3, P3 >} => {< I1 + 1, nil > S < I2, P2 > < I3 - 1, P3 >}
+       if not ((I3 == 0) and (I2 < 0)) .
+       
+   crl [FC-12-pending] : { < I3, P3 > < I1, FC- > S < I2, P2 >} => {< I1 + 1, nil > S < I2 - 1, P2 > }
+       if (I3 == 0) and (I2 < 0) .
+   crl [FC-22-pending] : { < I3, P3 > < I1, FC- > S < I2, P2 >} => { < I3 - 1, P3 > < I1 + 1, nil > S < I2, P2 >}
+       if not ((I3 == 0) and (I2 < 0)) .
+       
+   crl [FC-13-pending] : {S1 < I1, P1 > < I2, P2 > < I3, FC- > S2} =>  {S1 < I1 - 1, P1 > < I3 + 1, nil > S2}
+       if (I2 == 0 and I1 < 0) . 
+   crl [FC-23-pending] : {S1 < I1, P1 > < I2, P2 > < I3, FC- > S2} =>  {S1 < I1, P1 > < I2 - 1, P2 > < I3 + 1, nil > S2}
+       if not (I2 == 0 and I1 < 0) .
+   
+endm)
+*** (rew {< 0, nil > < 0, nil > < 1, nil > < 0, nil > < 3, nil > < 0, nil > < 1, nil > < 0, nil >} .)
+
+
+
+(mod W1-MOVE is
+   pr CONFIG-CALCULATION .
+   vars S S1 S2 : Seq .
+   vars I I1 I2 : Int .
+   var P P1 P2 : Pending .
+   var C : Config .
+   op checkEqual  : Config -> Bool .
+   eq checkEqual(C) = (C = c-(cj(C))) .
+
+   *** Rules   
+   crl [w1-fo] : {S1 < I, nil > S2} => {S1 < I, FC > S2}
+       if checkEqual({< I, nil > S2 S1}) and w1({S1 < I, nil > S2}) .    
+   crl [w1-op] : {S1 < I, nil > S2} => {S1 < I, FC- > S2}
+       if checkEqual({< I, nil > S2 S1}) and w1({S1 < I, nil > S2}) .
+endm)
+
+(mod W4-MOVE is
+   pr CONFIG-CALCULATION .
+   vars S S1 S2 : Seq .
+   vars I I1 I2 : Int .
+   var P P1 P2 : Pending .
+   var C : Config .
+   op checkW4condition1 : Config -> Bool .
+   eq checkW4condition1(C) = (C = c-(C)) and (getFirstQi(C) rem 2 =/= 0) .
+   op checkW4condition2 : Config -> Bool .
+   eq checkW4condition2(C) = (cj(C) = c-(cj(C))) and (getLastQi(C) rem 2 =/= 0) .
+   
+   *** Rules
+   crl [w4-fc1] : {S1 < I, nil > S2} => {S1 < I, FC > S2}
+       if not greater({< I, nil > S2 S1}, viewOpp({< I, nil > S2 S1}))
+       	  and checkW4condition1({< I, nil > S2 S1}) and w4({S1 < I, nil > S2}) .
+   crl [w4-fc2] : {S1 < I, nil > S2} => {S1 < I, FC- > S2}
+       if not greater({< I, nil > S2 S1}, viewOpp({< I, nil > S2 S1}))
+       	  and checkW4condition2({< I, nil > S2 S1}) and w4({S1 < I, nil > S2}) .  
+   crl [w4-op1] : {S1 < I, nil > S2} => {S1 < I, FC- > S2}
+       if greater({< I, nil > S2 S1}, viewOpp({< I, nil > S2 S1}))
+       	  and checkW4condition1(viewOpp({< I, nil > S2 S1})) and w4({S1 < I, nil > S2}) .
+   crl [w4-op2] : {S1 < I, nil > S2} => {S1 < I, FC > S2}
+       if greater({< I, nil > S2 S1}, viewOpp({< I, nil > S2 S1}))
+       	  and checkW4condition2(viewOpp({< I, nil > S2 S1})) and w4({S1 < I, nil > S2}) .
+endm)
+
+(mod W5-MOVE is
+   pr CONFIG-CALCULATION .
+   vars S S1 S2 : Seq .
+   vars I I1 I2 : Int .
+   var P P1 P2 : Pending .
+   var C : Config .
+   op checkW5condition  : Config -> Bool .
+   eq checkW5condition(C) = (C = alterSupermin(C)) .
+
+   crl [w5-fo] : {S1 < I, nil > S2} => {S1 < I, FC > S2}
+       if not greater({< I, nil > S2 S1}, viewOpp({< I, nil > S2 S1}))
+       	  and checkW5condition({< I, nil > S2 S1}) and w5({S1 < I, nil > S2}) .   
+   crl [w5-op] : {S1 < I, nil > S2} => {S1 < I, FC- > S2}
+       if greater({< I, nil > S2 S1}, viewOpp({< I, nil > S2 S1}))
+       	  and checkW5condition(viewOpp({< I, nil > S2 S1})) and w5({S1 < I, nil > S2}) .
+endm)
+
+(mod W6-MOVE is
+   pr CONFIG-CALCULATION .
+   vars S S1 S2 : Seq .  
+   vars I I1 I2 : Int .
+   var P P1 P2 : Pending . 
+   var C : Config .
+   
+   
+   op checkW6condition1  : Config -> Bool .
+   eq checkW6condition1(C) = (c'(C) = c-(c'(C)) and (getFirstQi(c'(C)) rem 2 =/= 0)) .
+   op checkW6condition2  : Config -> Bool .
+   eq checkW6condition2(C) = (cj(c''(C)) = c-(cj(c''(C))) and (getLastQi(c''(C)) rem 2 =/= 0)) .
+
+   crl [w6-fo1] : {S1 < I, nil > S2} => {S1 < I, FC > S2}
+       if not greater({< I, nil > S2 S1}, viewOpp({< I, nil > S2 S1}))
+       	  and checkW6condition1({< I, nil > S2 S1}) and  w6({S1 < I, nil > S2}) .
+   crl [w6-fo2] : {S1 < I, nil > S2} => {S1 < I, FC- > S2} if not greater({< I, nil > S2 S1}, viewOpp({< I, nil > S2 S1})) and not checkW6condition1({< I, nil > S2 S1}) and checkW6condition2({< I, nil > S2 S1}) and  w6({S1 < I, nil > S2}) .
+   crl [w6-fo3] : {S1 < I, nil > S2} => {S1 < I, FC > S2} if not greater({< I, nil > S2 S1}, viewOpp({< I, nil > S2 S1})) and not checkW6condition1({< I, nil > S2 S1}) and not checkW6condition2({< I, nil > S2 S1}) and not checkK({< I, nil > S2 S1}) and  {< I, nil > S2 S1} = superminCf({< I, nil > S2 S1}) and w6({S1 < I, nil > S2}) .
+
+   crl [w6-op1] : {S1 < I, nil > S2} => {S1 < I, FC- > S2} if greater({< I, nil > S2 S1}, viewOpp({< I, nil > S2 S1})) and checkW6condition1(viewOpp({< I, nil > S2 S1})) and  w6({S1 < I, nil > S2}) .  
+   crl [w6-op2] : {S1 < I, nil > S2} => {S1 < I, FC > S2} if greater({< I, nil > S2 S1}, viewOpp({< I, nil > S2 S1})) and not checkW6condition1(viewOpp({< I, nil > S2 S1})) and checkW6condition2(viewOpp({< I, nil > S2 S1})) and  w6({S1 < I, nil > S2}) . 
+   crl [w6-op3] : {S1 < I, nil > S2} => {S1 < I, FC- > S2} if greater({< I, nil > S2 S1}, viewOpp({< I, nil > S2 S1})) and not checkW6condition1(viewOpp({< I, nil > S2 S1})) and not checkW6condition2(viewOpp({< I, nil > S2 S1})) and not checkK(viewOpp({< I, nil > S2 S1})) and (viewOpp({< I, nil > S2 S1}) = superminCf({< I, nil > S2 S1})) and w6({S1 < I, nil > S2}) .              
+endm)
+
+(mod W7-MOVE is
+   pr CONFIG-CALCULATION .
+   vars S S1 S2 : Seq .
+   vars I I1 I2 : Int .
+   var P P1 P2 : Pending .
+   var C : Config .
+   var CL : ConfigList .
+   op checkReduction  : Config -> Bool .
+   eq checkReduction(C) = (checkRed(C) =/= {empS}) .
+
+   
+   op checkPedingReduction  : Config -> Bool .
+   eq checkPedingReduction(C) = (checkRed(C) =/= {empS}) and (min(c^(C), c-(cj(c^(C)))) = superminCf(c^(C))) and min(C, c-(cj(C))) =/ superminCf(C) .
+
+   crl [w7-fo1] : {S1 < I, nil > S2} => {S1 < I, FC > S2} if not greater({< I, nil > S2 S1}, viewOpp({< I, nil > S2 S1})) and checkAllowedSym({S1 < I, nil > S2}) and {< I, nil > S2 S1} = superminCf({S1 < I, nil > S2}) and w7({S1 < I, nil > S2}) .   
+   crl [w7-fo2] : {S1 < I, nil > S2} => {S1 < I, FC > S2} if not greater({< I, nil > S2 S1}, viewOpp({< I, nil > S2 S1})) and not checkSym({S1 < I, nil > S2}) and checkReduction({S1 < I, nil > S2}) and checkPedingReduction({< I, nil > S2 S1}) and  w7({S1 < I, nil > S2}) .   
+   crl [w7-fo3] : {S1 < I, nil > S2} => {S1 < I, FC > S2} if not greater({< I, nil > S2 S1}, viewOpp({< I, nil > S2 S1})) and not checkSym({< I, nil > S2 S1}) and not checkReduction({S1 < I, nil > S2}) and {< I, nil > S2 S1} = superminCf({S1 < I, nil > S2}) and  w7({S1 < I, nil > S2}) .
+   crl [w7-op1] : {S1 < I, nil > S2} => {S1 < I, FC- > S2} if greater({< I, nil > S2 S1}, viewOpp({< I, nil > S2 S1})) and checkAllowedSym({S1 < I, nil > S2}) and viewOpp({< I, nil > S2 S1}) = superminCf({S1 < I, nil > S2}) and  w7({S1 < I, nil > S2}) .   
+   crl [w7-op2] : {S1 < I, nil > S2} => {S1 < I, FC- > S2} if greater({< I, nil > S2 S1}, viewOpp({< I, nil > S2 S1})) and not checkSym({S1 < I, nil > S2}) and checkReduction({S1 < I, nil > S2}) and checkPedingReduction(viewOpp({< I, nil > S2 S1})) and  w7({S1 < I, nil > S2}) .  
+   crl [w7-op3] : {S1 < I, nil > S2} => {S1 < I, FC- > S2} if greater({< I, nil > S2 S1}, viewOpp({< I, nil > S2 S1})) and not checkSym({S1 < I, nil > S2}) and not checkReduction({S1 < I, nil > S2}) and viewOpp({< I, nil > S2 S1}) = superminCf({S1 < I, nil > S2}) and  w7({S1 < I, nil > S2}) .  
+endm)
+
+
+(fmod COLLECT-CALCULATION is
+     pr COLL&CONFIG .
+     pr CONFIG-CALCULATION .
+
+     vars S0 S3 S1 S2 : Seq .
+     vars I I1 I2 IM IM1 IM2 : Int .
+     vars N0 N1 N2 : Nat .
+     var P P1 P2 P3 P4 : Pending .
+     var C : Config .
+     var CL : ConfigList .
+     vars SC SC1 SC2 SC3 SC4 SC5 SC6 : Coll&seq .
+     vars R R1 R2 : Coll .
+     var CC : Coll&config .
+
+     ***  The function to  calculate C^ when CT = coll-a-1 .
+     op c^m : Config -> Config .
+     ceq c^m({S1 < I1, P1 > < IM, P > < I2, P2 > S2}) = if I1 > I2 then {S1 < I1 - 1, P1 > < 0, P > < I2, P2 > S2}
+         else  {S1 < I1, P1 > < 0, P > < I2 - 1, P2 > S2} fi if (IM < 0) .	 
+     eq c^m(C) =  {empS} [owise] .
+
+     ***  The function to check qk-1 > qk+1 (C^) .
+     op c^checkQ : Config -> Bool .
+     ceq c^checkQ({S1 < I1, P1 > < IM, P > < I2, P2 > S2}) = (I1 > I2) if (IM < 0) .	 
+     eq c^checkQ(C) = false [owise] .
+     
+
+     op ck^m : Config -> Config .
+     ceq ck^m({S1 < I1, P1 > < IM, P > < I2, P2 > S2}) = if I1 > I2 then {< 0, P > < I2, P2 > S2 S1 < I1 - 1, P1 > }
+         else {< 0, P > < I2 - 1, P2 > S2 S1 < I1, P1 >} fi if (IM < 0) .	 
+     eq ck^m(C) =  {empS} [owise] .
+
+     op checkReM :  Config ->  Bool .
+     eq checkReM(C) = (c^m(C) =/= {empS}) and checkSym(c^m(C)) .
+
+     ***  The function to check coll-a-1 .
+     op coll-a-1 : Config -> Bool .
+     eq coll-a-1(C) = (numMul(C) == 1) and (numNodesoccupied(C) > 6) and not checkSym(C) and checkReM(C) .
+  
+
+     ***  The function to  calculate the number of Ci such that Ci = C-(Ci)
+     op numSymCi : Config -> Nat .
+     op numSymCi1 : ConfigList -> Nat .
+     eq numSymCi({S3}) = numSymCi1(S3 ; lisCi({S3})) .
+     eq numSymCi1(empL) = 0 .
+     eq numSymCi1(S3 ; CL) = if ({S3} =* c-({S3})) then 1 + numSymCi1(CL) else numSymCi1(CL) fi .
+
+ 
+     ***  The function to  calculate the number of Ci such that Ci = viewOpp(Ci)
+     op numSymOppC : Config -> Nat .
+     op numSymOppC1 : ConfigList -> Nat .
+     eq numSymOppC({S3}) = numSymOppC1(S3 ; lisCi({S3})) .
+     eq numSymOppC1(empL) = 0 .
+     eq numSymOppC1(S3 ; CL) = if ({S3} =* viewOpp({S3})) then 1 + numSymOppC1(CL) else numSymOppC1(CL) fi .
+
+     ***  The function to check Node-Node symmetry for a symmetry with two multiplicities
+     op checkSymNN : Config -> Bool .
+     eq checkSymNN(C) = (numSymCi(C) == 2) and (numSigRobots(C) rem 2 == 0) and (numNodes(C) rem 2 == 0) .
+
+     ***  The function to check Node-Edge symmetry for a symmetry with two multiplicities
+     op checkSymNE : Config -> Bool .
+     eq checkSymNE(C) = (numSymCi(C) == 2) and (numSigRobots(C) rem 2 == 0) and (numNodes(C) rem 2 =/= 0) .
+
+     ***  The function to check Robot-Robot symmetry for a symmetry with two multiplicities
+     op checkSymRR : Config -> Bool .
+     eq checkSymRR(C) = (numSymCi(C) == 0) and (numSigRobots(C) rem 2 == 0) and (numNodes(C) rem 2 == 0) and (numSymOppC(C) == 2) .
+
+
+     op len : Coll&seq -> Nat .
+     eq len(empCS) = 0 .
+     eq len(< I, P, R >  SC) = (1 + I) + len(SC)  .
+     
+
+     op transfer : Config -> Coll&config .
+     op transfer1 : Seq -> Coll&seq .  
+     eq transfer({S0}) = {transfer1(S0)} .
+     eq transfer1(empS) = empCS .
+     eq transfer1(< I, P > S0) = < I, P, none > transfer1(S0) .
+
+     op transferb : Coll&config -> Config .
+     op transferb1 : Coll&seq -> Seq .  
+     eq transferb({SC}) = {transferb1(SC)} .
+     eq transferb1(empCS) = empS .
+     eq transferb1(< I, P, R > SC) = < I, P > transferb1(SC) .
+
+
+     op ns :  Config -> Coll&config .
+     op nsNE : Coll&config -> Coll&config .
+     op nNE  : Coll&config -> Coll&config .
+     op sNE  : Coll&config -> Coll&config . 
+     op nsNN : Coll&config -> Coll&config .
+     op nNN  : Coll&config -> Coll&config .
+     op sNN  : Coll&config -> Coll&config .
+     op nseNN  : Coll&config -> Coll&config . 
+     op nsRR : Coll&config -> Coll&config .
+     op nRR  : Coll&config -> Coll&config .
+     op sRR  : Coll&config -> Coll&config .
+     op nseRR  : Coll&config -> Coll&config .   
+     ceq ns(C) = nsNE(transfer(C)) if  checkSymNE(C) .
+     ceq ns(C) = nsNN(transfer(C)) if  checkSymNN(C) .
+     ceq ns(C) = nsRR(transfer(C)) if  checkSymRR(C) .
+     eq nsNE(CC) = nNE(sNE(CC)) .
+     eq nsNN(CC) = nNN(sNN(nseNN(CC))) .
+     eq nsRR(CC) = nRR(sRR(nseRR(CC))) .
+     ceq nNE({SC1 < IM1, P1, none >  SC2 < I, P, none > SC3  < IM2, P2, none > SC4}) =
+     	 {SC1 < IM1, P1, none >  SC2 < I, P, N > SC3  < IM2, P2, none > SC4}
+     	 if (len(SC2) == len(SC3)) and (I rem 2 =/= 0) and (IM1 < 0) and (IM2 < 0) .
+	 
+
+     ceq nNE({SC1 < I, P, none > SC2 < IM1, P1, none >  SC3 < IM2, P2, none > SC4}) =
+       	 {SC1 < I, P, N > SC2 < IM1, P1, none >  SC3 < IM2, P2, none > SC4}
+    	 if len(SC1) + len(SC4) == len(SC2) and (I rem 2 =/= 0) and (IM1 < 0) and (IM2 < 0) .
+     ***(ceq nNE({SC1 < IM1, P1, none >  SC2  < IM2, P2, none > SC3 < I, P, none > SC4}) =
+     	 {SC1 < IM1, P1, none >  SC2  < IM2, P2, none > SC3 < I, P, N > SC4}
+    	 if len(SC1) + len(SC4) == len(SC3) and (I rem 2 =/= 0) and (IM1 < 0) and (IM2 < 0) .)
+	 
+
+     ceq sNE({SC1 < IM1, P1, none >  SC2 < I, P, none > SC3  < IM2, P2, none > SC4}) = {SC1 < IM1, P1, none >  SC2 < I, P, S > SC3  < IM2, P2, none > SC4} if (len(SC2) == len(SC3)) and (I rem 2 == 0) and (IM1 < 0) and (IM2 < 0) .
+     ***(ceq sNE({SC1 < I, P, none > SC2 < IM1, P1, none >  SC3 < IM2, P2, none > SC4}) = {SC1 < I, P, S > SC2 < IM1, P1, none >  SC3 < IM2, P2, none > SC4} if len(SC1) + len(SC4) == len(SC2) and (I rem 2 == 0) and (IM1 < 0) and (IM2 < 0) .)
+     ***(ceq sNE({SC1 < IM1, P1, none >  SC2  < IM2, P2, none > SC3 < I, P, none > SC4}) = {SC1 < IM1, P1, none >  SC2  < IM2, P2, none > SC3 < I, P, S > SC4} if len(SC1) + len(SC4) == len(SC3) and (I rem 2 == 0) and (IM1 < 0) and (IM2 < 0) .)
+     
+  
+      
+     op numNodesC : Coll&config -> Nat .
+     eq numNodesC({empCS}) = 0 .
+     eq numNodesC({< I, P, R > SC}) = if I >= 0 then 1 + I + numNodesC({SC}) else numNodesC({SC}) fi .
+     ceq nRR({SC1 < IM1, P1, none > SC2 < I, P, none > SC3  < IM2, P2, none > SC4}) =
+     	 {SC1 < IM1, P1, none >  SC2 < I, P, N > SC3  < IM2, P2, none > SC4}
+	 if (len(SC2) == (I + 1) + len(SC3)) and ((len(SC2) + I + 1 + len(SC3)) <
+	 (numNodesC({SC1 < -1, P1, none > SC2 < I, P, none > SC3  < -1, P2, none > SC4}) quo 2)) and (IM1 < 0) and (IM2 < 0) .   
+
+     eq nRR(CC) = CC [owise] .
+
+     ceq sRR({SC1 < IM1, P1, none > SC2 < I, P, none > SC3  < IM2, P2, none > SC4}) =
+     	 {SC1 < -1, P1, none >  SC2 < I, P, S > SC3  < -1, P2, none > SC4}
+	 if (len(SC2) == (I + 1) + len(SC3)) and ((len(SC2) + I + 1 + len(SC3)) >
+	    (numNodesC({SC1 < -1, P1, none > SC2 < I, P, none > SC3  < -1, P2, none > SC4}) quo 2))
+	     and (IM1 < 0) and (IM2 < 0) .    
+     eq sRR(CC) = CC [owise] .
+
+     ceq nseRR({SC1 < I1, P1, none > SC2 < IM1, P2, none > SC3 < I2, P3, none > SC4  < IM2, P4, none > SC5}) =
+     	 if greater(transferb({< I1, P1, none > SC2 < -1, P2, none > SC3 < I2, P3, none > SC4  < -1, P4, none > SC5 SC1}),
+	    transferb({< I2, P3, none > SC4  < -1, P4, none > SC5 SC1 < I1, P1, none > SC2 < -1, P2, none > SC3}))
+	 then {SC1 < I1, P1, S > SC2 < IM1, P2, none > SC3 < I2, P3, N > SC4  < IM2, P4, none > SC5} else
+     	    {SC1 < I1, P1, N > SC2 < IM1, P2, none > SC3 < I2, P3, S > SC4  < IM2, P4, none > SC5} fi
+	 if (len(SC5) + len(SC1) == (I1 + 1) + len(SC2)) and  (len(SC3) == (I2 + 1) + len(SC4))
+	    and (len(SC5) + len(SC1) == len(SC3)) and (IM1 < 0) and (IM2 < 0) .
+     eq nseRR(CC) = CC [owise] .
+
+     ceq nNN({SC1 < IM1, P1, none > SC2 < I, P, none > SC3  < IM2, P2, none > SC4}) =
+     	 {SC1 < IM1, P1, none >  SC2 < I, P, N > SC3  < IM2, P2, none > SC4} if (len(SC2) == len(SC3))
+	 and ((len(SC2) + I + 1 + len(SC3)) <  (numNodesC({SC1 < -1, P1, none > SC2 < I, P, none >
+	 SC3  < -1, P2, none > SC4}) quo 2)) and (IM1 < 0) and (IM2 < 0) .   
+     eq nNN(CC) = CC [owise] .
+
+     ceq sNN({SC1 < IM1, P1, none > SC2 < I, P, none > SC3  < IM2, P2, none > SC4}) =
+     	 {SC1 < IM1, P1, none >  SC2 < I, P, S > SC3  < IM2, P2, none > SC4} if (len(SC2) == len(SC3))
+	 and ((len(SC2) + I + 1 + len(SC3)) >  (numNodesC({SC1 < -1, P1, none > SC2 < I, P, none > SC3
+	 < -1, P2, none > SC4}) quo 2)) and (IM1 < 0) and (IM2 < 0) .  
+     eq sNN(CC) = CC [owise] .
+     ceq nseNN({SC1 < I1, P1, none > SC2 < IM1, P2, none > SC3 < I2, P3, none > SC4  < IM2, P4, none > SC5}) =
+     	 if greater(transferb({< I1, P1, none > SC2 < -1, P2, none > SC3 < I2, P4, none > SC4  < -1, P2, none > SC5 SC1}),
+	    transferb({< I2, P3, none > SC4 < -1, P4, none > SC5 SC1 < I1, P1, none > SC2 < -1, P2, none > SC3}))
+	 then {SC1 < I1, P1, N > SC2 < IM1, P2, none > SC3 < I2, P3, S > SC4  < IM2, P4, none > SC5} else
+     	    {SC1 < I1, P1, S > SC2 < IM1, P2, none > SC3 < I2, P3, N > SC4  < IM2, P4, none > SC5} fi
+     	 if (len(SC5) + len(SC1) == len(SC2)) and  (len(SC3) == len(SC4)) and (len(SC5) + len(SC1) + (I1 + 1) + len(SC2)
+	    == len(SC3) + (I2 + 1) + len(SC4)) and (IM1 < 0) and (IM2 < 0) .
+     eq nseNN(CC) = CC [owise] .
+     
+     op nsA : Config ->  Coll&config .
+     op nsNEA : Coll&config -> Coll&config .
+     op sNEA : Coll&config -> Coll&config .
+     op nNEA : Coll&config -> Coll&config .
+     op nsNNRRA : Coll&config -> Coll&config .
+     op nNNRRA : Coll&config -> Coll&config .
+     op sNNRRA : Coll&config -> Coll&config .
+     op nsENRA : Coll&config -> Coll&config .
+     op nsENA : Coll&config -> Coll&config .
+     op nsERA : Coll&config -> Coll&config .
+      
+     eq nsA(C) = nsNNRRA(nsENRA(nsNEA(transfer(C)))) .
+     eq nsNEA(CC) = nNEA(sNEA(CC)) .
+     eq nsENRA(CC) = nsERA(nsENA(CC)) .
+     eq nsNNRRA(CC) = sNNRRA(nNNRRA(CC)) .     
+
+     ceq sNEA({SC1 < IM1, P1, none >  SC2 < I, P, none > SC3  < IM2, P2, none > SC4}) =
+     	 {SC1 < IM1, P1, none >  SC2 < I, P, S > SC3  < IM2, P2, none > SC4} if (len(SC2) == len(SC3))
+	 and (I rem 2 == 0) and (IM1 < 0) and (IM2 < 0) .
+     eq sNEA(CC) = CC [owise] .
+     ceq nNEA({SC1 < I, P, S > SC3  < I1, P1, none > SC4}) = {SC1 < I, P, S > SC3  < I1, P1, N > SC4}
+     	 if (I rem 2 == 0) and (len(SC3)+ (I quo 2) < numNodesC({SC1 < I, P, S > SC3  < I1, P1, none > SC4}) quo 2)
+	 and (len(SC3) + I1 + 1 + (I quo 2) > numNodesC({SC1 < I, P, S > SC3  < I1, P1, none > SC4}) quo 2) .
+     eq nNEA(CC) = CC [owise] .
+     op countIntervalNotAdj : Coll&seq -> Nat .
+     eq countIntervalNotAdj(empCS) = 0 .
+     ceq countIntervalNotAdj(< IM, P, none > < I, P1, none > SC2) = if I == 0 then countIntervalNotAdj(SC2)
+     	 		       	      	       	      	     	    else 1 + countIntervalNotAdj(SC2) fi if (IM < 0) .
+     ceq countIntervalNotAdj(SC2 < I, P1, none > < IM, P, none >) = if I == 0 then countIntervalNotAdj(SC2)
+     	 			      	       	       	       	    else 1 + countIntervalNotAdj(SC2) fi if (IM < 0) .
+     eq countIntervalNotAdj(< I, P, none > SC2) = if I >= 0 then 1 + countIntervalNotAdj(SC2)
+     			      	    	   	  else countIntervalNotAdj(SC2) fi [owise] .
+
+     ceq nNNRRA({SC1 < IM1, P1, none >  SC2 < I, P, none > SC3  < IM2, P2, none > SC4}) =
+     	 {SC1 < IM1, P1, none >  SC2 < I, P, N > SC3  < IM2, P2, none > SC4}
+	 if (len(SC2 < I, P, none > SC3) < len(SC4 SC1)) and (countIntervalNotAdj(< IM1, P1, none >  SC2)
+	 == countIntervalNotAdj(SC3  < IM2, P2, none >) or countIntervalNotAdj(< IM1, P1, none >  SC2)
+	 == countIntervalNotAdj(< I, P, none > SC3 < IM2, P2, none >)) and (IM1 < 0) and (IM2 < 0) .    
+     ceq sNNRRA({SC1 < IM1, P1, none >  SC2 < I, P, none > SC3  < IM2, P2, none > SC4}) =
+         {SC1 < IM1, P1, none >  SC2 < I, P, S > SC3  < IM2, P2, none > SC4}
+         if (len(SC2 < I, P, none > SC3) > len(SC4 SC1)) and (countIntervalNotAdj(< IM1, P1, none >  SC2)
+       	     == countIntervalNotAdj(SC3  < IM2, P2, none >) or countIntervalNotAdj(< IM1, P1, none >  SC2)
+	     == countIntervalNotAdj(< I, P, none > SC3 < IM2, P2, none >)) and (IM1 < 0) and (IM2 < 0) .    
+     eq nNNRRA(CC) = CC [owise] .
+     eq sNNRRA(CC) = CC [owise] .
+     
+     ceq nsENA({SC1 < I1, P1, none > SC2 < IM1, P2, none > SC3 < I2, P3, none > SC4  < IM2, P4, none > SC5}) =
+     	 if greater(transferb({< I1, P1, none > SC2 < -1, P2, none > SC3 < I2, P3, none > SC4  < -1, P4, none > SC5 SC1}),
+	    transferb({< I2, P3, none > SC4 < -1, P4, none > SC5 SC1 < I1, P1, none > SC2 < -1, P2, none > SC3}))
+	 then
+	    {SC1 < I1, P1, N > SC2 < IM1, P2, none > SC3 < I2, P3, S > SC4  < IM2, P4, none > SC5} else
+     	    {SC1 < I1, P1, S > SC2 < IM1, P2, none > SC3 < I2, P3, N > SC4  < IM2, P4, none > SC5} fi
+     	    if (len(SC5) + len(SC1) == len(SC2)) and  (I1 rem 2 =/= 0) and (len(SC2 < IM1, P2, none > SC3) + (I1 quo 2) <
+      	    numNodesC({SC1 < I1, P1, none > SC2 < IM1, P2, none > SC3 < I2, P3, none > SC4  < IM2, P4, none > SC5}) quo 2)
+	    and (len(SC2 < IM1, P2, none > SC3 < I2, P3, none > ) +  (I1 quo 2) >= numNodesC({SC1 < I1, P1, none > SC2
+	    < IM1, P2, none > SC3 < I2, P3, none > SC4  < IM2, P4, none > SC5}) quo 2) and (IM1 < 0) and (IM2 < 0) .
+
+
+     ceq nsERA({SC1 < I1, P1, none > SC2 < IM1, P2, none > SC3 < I2, P3, none > SC4  < IM2, P4, none > SC5}) =
+     	 if greater(transferb({< I1, P1, none > SC2 < -1, P2, none > SC3 < I2, P3, none > SC4  < -1, P4, none > SC5 SC1}),
+	    transferb({< I2, P3, none > SC4  < -1, P4, none > SC5 SC1 < I1, P1, none > SC2 < -1, P2, none > SC3})) then
+     	    {SC1 < I1, P1, S > SC2 < IM1, P2, none > SC3 < I2, P3, N > SC4  < IM2, P4, none > SC5} else
+     	    {SC1 < I1, P1, N > SC2 < IM1, P2, none > SC3 < I2, P3, S > SC4  < IM2, P4, none > SC5} fi
+	    if (len(SC5) + len(SC1) == (I1 + 1) + len(SC2)) and  (len(SC3) == (I2 + 1) + len(SC4))
+	       and (len(SC5) + len(SC1) == len(SC3)) and (IM1 < 0) and (IM2 < 0) .
+
+     eq nsERA(CC) = CC [owise] .
+     eq nsENA(CC) = CC [owise] .
+
+     op countSingleRobotG0N : Config -> Nat .
+     op countSingleRobotG0NCC : Coll&config -> Nat .
+     op countSingleRobotG0NCCS : Coll&seq -> Nat .
+     op countSingleRobotG0NCCSMark : Nat Coll&seq -> Coll&seq .
+     eq countSingleRobotG0N(C) = countSingleRobotG0NCC(ns(C)) .
+     eq countSingleRobotG0NCC({empCS}) = 0 .
+   
+     ceq countSingleRobotG0NCC({SC1 < I, P, N > SC2 < IM1, P1, none > SC3 < IM2, P2, none > SC4}) =
+     	 countSingleRobotG0NCCS(countSingleRobotG0NCCSMark(0, SC4 SC1 < I, P, N > SC2))
+	 if (IM1 < 0) and (IM2 < 0) .
+     ***(ceq countSingleRobotG0NCC({SC1 < IM1, P1, none > SC2  < I, P, N > SC3 < IM2, P2, none > SC4}) =
+     	 countSingleRobotG0NCCS(countSingleRobotG0NCCSMark(0, SC2  < I, P, N > SC3))
+	 if (IM1 < 0) and (IM2 < 0) .)
+     ***(ceq countSingleRobotG0NCC({SC1 < IM1, P1, none > SC2 < IM2, P2, none > SC3 < I, P, N > SC4}) =
+     	 countSingleRobotG0NCCS(countSingleRobotG0NCCSMark(0, SC3 < I, P, N > SC4 SC1))
+	 if (IM1 < 0) and (IM2 < 0) .)
+     
+     eq countSingleRobotG0NCCSMark(N0, < I, P, R >) = < I, P, R > .
+     eq countSingleRobotG0NCCSMark(N0, < I, P, R > SC2) = if ((N0 + I > 0 and N0 + I <= sd(len(SC2), 1))
+     	or (sd(len(SC2), 1) > 0 and N0 + I >= sd(len(SC2), 1)))
+	then < I, P, CG > countSingleRobotG0NCCSMark(N0 + I, SC2)
+	else < I, P, R > countSingleRobotG0NCCSMark(N0 + I, SC2) fi .
+    
+     
+     eq countSingleRobotG0NCCS(empCS) = 0 . 
+     eq countSingleRobotG0NCCS(< I, P, R > SC2) = if (R == CG) then 1 + countSingleRobotG0NCCS(SC2)
+     				       	   	  else  countSingleRobotG0NCCS(SC2) fi .
+
+     op countSingleRobotG0S : Config -> Nat .
+     op countSingleRobotG0SCC : Coll&config -> Nat .
+     op countSingleRobotG0SCCS : Coll&seq -> Nat .
+     op countSingleRobotG0SCCSMark : Nat Coll&seq -> Coll&seq .
+     eq countSingleRobotG0S(C) = countSingleRobotG0SCC(ns(C)) .
+     eq countSingleRobotG0SCC({empCS}) = 0 .
+   
+     ceq countSingleRobotG0SCC({SC1 < I, P, S > SC2 < IM1, P1, none > SC3 < IM2, P2, none > SC4}) =
+     	 countSingleRobotG0SCCS(countSingleRobotG0NCCSMark(0, SC4 SC1 < I, P, S > SC2))
+	 if (IM1 < 0) and (IM2 < 0) .
+     ***(ceq countSingleRobotG0SCC({SC1 < IM1, P1, none > SC2  < I, P, S > SC3 < IM2, P2, none > SC4}) =
+     	 countSingleRobotG0SCCS(countSingleRobotG0SCCSMark(0, SC2  < I, P, S > SC3))
+	 if (IM1 < 0) and (IM2 < 0) .)
+     ***(ceq countSingleRobotG0SCC({SC1 < IM1, P1, none > SC2 < IM2, P2, none > SC3 < I, P, S > SC4}) =
+     	 countSingleRobotG0SCCS(countSingleRobotG0NCCSMark(0, SC3 < I, P, S > SC4 SC1))
+	 if (IM1 < 0) and (IM2 < 0) .)
+     
+     eq countSingleRobotG0SCCSMark(N0, < I, P, R >) = < I, P, R > .
+     eq countSingleRobotG0SCCSMark(N0, < I, P, R > SC2) = if ((N0 + I > 0 and N0 + I <= len(SC2) - 1)
+     	or (len(SC2) - 1 > 0 and N0 + I >= len(SC2) - 1)) then < I, P, CG > countSingleRobotG0SCCSMark(N0 + I, SC2)
+	else < I, P, R > countSingleRobotG0SCCSMark(N0 + I, SC2) fi .
+        
+     eq countSingleRobotG0SCCS(empCS) = 0 . 
+     eq countSingleRobotG0SCCS(< I, P, R > SC2) = if (R == CG) then 1 + countSingleRobotG0SCCS(SC2)
+     				       	   	  else  countSingleRobotG0SCCS(SC2) fi . 
+     
+     op countSingleRobotG0A : Config -> Nat .
+     op countSingleRobotG0ACC : Coll&config -> Nat .
+     op countSingleRobotG0ACCS : Coll&seq -> Nat .
+     op countSingleRobotG0ACCSMark1 : Nat Coll&seq -> Coll&seq .
+     op countSingleRobotG0ACCSMark2 : Nat Coll&seq -> Coll&seq .
+     eq countSingleRobotG0A(C) = countSingleRobotG0ACC(nsA(C)) .
+     eq countSingleRobotG0ACC({empCS}) = 0 .
+
+     op checkARR : Coll&config -> Bool .
+     ceq checkARR({SC1 < I, P, S > SC2 < IM1, P1, none > SC3 < IM2, P2, none > SC4}) = true
+     	 if (len(SC4 SC1) == len(< I, P, S > SC2)) and (IM1 < 0) and (IM2 < 0) .
+     eq checkARR(CC) = false [owise] .
+     
+     ceq countSingleRobotG0SCC({SC1 < I, P, S > SC2 < IM1, P1, none > SC3 < IM2, P2, none > SC4}) =
+     	 countSingleRobotG0SCCS(countSingleRobotG0NCCSMark(0, SC4 SC1 < I, P, S > SC2))
+	 if (IM1 < 0) and (IM2 < 0) .
+     ***(ceq countSingleRobotG0SCC({SC1 < IM1, P1, none > SC2  < I, P, S > SC3 < IM2, P2, none > SC4}) =
+     	 countSingleRobotG0SCCS(countSingleRobotG0SCCSMark(0, SC2  < I, P, S > SC3))
+	 if (IM1 < 0) and (IM2 < 0) .)
+     ***(ceq countSingleRobotG0SCC({SC1 < IM1, P1, none > SC2 < IM2, P2, none > SC3 < I, P, S > SC4}) =
+     	 countSingleRobotG0SCCS(countSingleRobotG0NCCSMark(0, SC3 < I, P, S > SC4 SC1))
+	 if (IM1 < 0) and (IM2 < 0) .)
+	 
+     ceq countSingleRobotG0ACC({SC1 < IM1, P1, none > SC2 < IM2, P2, none > SC3}) =
+     	 if checkARR({SC1 < IM1, P1, none > SC2 < IM2, P2, none > SC3})
+	 then countSingleRobotG0ACCS(countSingleRobotG0ACCSMark2(0, SC3 SC1)
+	      countSingleRobotG0ACCSMark2(0, SC2))
+	 else countSingleRobotG0ACCS(countSingleRobotG0ACCSMark1(0, SC3 SC1)
+	      countSingleRobotG0ACCSMark1(0, SC2)) fi if (IM1 < 0) and (IM2 < 0) .
+	      
+     eq countSingleRobotG0ACCSMark1(N0, < I, P, R >) = < I, P, R > .
+     eq countSingleRobotG0ACCSMark1(N0, < I, P, R > < I1, P1, S > SC1) = < I, P, R > < I1, P1, S >
+     countSingleRobotG0ACCSMark1(N0 + I + I1, SC1) .    
+     eq countSingleRobotG0ACCSMark1(N0, < I, P, R > SC2) = if ((N0 + I > 0
+     	and N0 + I <= len(SC2) - 1) or (len(SC2) -  1 > 0 and N0 + I >= len(SC2) - 1))
+	then < I, P, CG > countSingleRobotG0ACCSMark1(N0 + I, SC2)
+	else < I, P, R > countSingleRobotG0ACCSMark1(N0 + I, SC2) fi [owise] .
+     
+     eq countSingleRobotG0ACCSMark2(N0, < I, P, R >) = < I, P, R > .
+     eq countSingleRobotG0ACCSMark2(N0, < I, P, R > < I1, P1, N > SC1) = < I, P, R >
+     	countSingleRobotG0ACCSMark2(N0 + I, < I1, P1, N > SC1) .
+     eq countSingleRobotG0ACCSMark2(N0, < I, P, R > < I1, P1, S > SC1) = < I, P, R >
+     	countSingleRobotG0ACCSMark2(N0 + I, < I1, P1, S > SC1) .    
+     eq countSingleRobotG0ACCSMark2(N0, < I, P, R > SC2) = if ((N0 + I > 0 and N0 + I <= len(SC2) -  1)
+     				    or (len(SC2) - 1 > 0 and N0 + I >= len(SC2) - 1)) then < I, P, CG >
+				    countSingleRobotG0ACCSMark2(N0 + I, SC2)
+				    else < I, P, R > countSingleRobotG0ACCSMark2(N0 + I, SC2) fi [owise] .  
+     eq countSingleRobotG0ACCS(empCS) = 0 . 
+     eq countSingleRobotG0ACCS(< I, P, R > SC2) = if (R == CG) then 1 + countSingleRobotG0ACCS(SC2)
+     				       	   	  else  countSingleRobotG0ACCS(SC2) fi .
+
+     op coll-s-2 : Config -> Bool .
+     op coll-s-2a : Config -> Bool .
+     op coll-s-2b : Config -> Bool .
+     op coll-s-2c : Config -> Bool .
+     eq coll-s-2a(C) = (numNodesoccupied(C) >= 6) .
+     eq coll-s-2b(C) = (numNodesoccupied(C) == 6) and (countSingleRobotG0N(C) > 1) .
+     eq coll-s-2c(C) = (numNodesoccupied(C) == 6) and (countSingleRobotG0S(C) > 2) .     
+     eq coll-s-2(C) = (numMul(C) == 2) and checkAllowedSym(C)
+     		      and (coll-s-2a(C) or coll-s-2b(C) or coll-s-2c(C)) .
+		      
+     op coll-a-2 : Config -> Bool .
+     op coll-a-2a : Config -> Bool .
+     op coll-a-2b : Config -> Bool .
+     eq coll-a-2a(C) = (numNodesoccupied(C) >= 6) .
+     eq coll-a-2b(C) = (numNodesoccupied(C) == 6) and (countSingleRobotG0A(C) >= 1) .
+     eq coll-a-2(C) = (numMul(C) == 2) and not checkSym(C) and (coll-a-2a(C) or coll-a-2b(C)) .
+
+     op checkNorthview : Config -> Bool .
+     op checkNorthviewC :  Coll&config -> Bool .
+     eq checkNorthview(C) = if checkSym(C) then checkNorthviewC(ns(C)) else checkNorthviewC(nsA(C)) fi .      
+     eq checkNorthviewC({SC1 < I1, P1, N > SC2 < IM1, P2, none > SC3 < I2, P3, S > SC4 < IM2, P4, none > SC5}) = true .
+     eq checkNorthviewC({SC1 < IM1, P2, none > SC2 < I1, P1, N > SC3 < IM2, P4, none > SC4 < I2, P3, S > SC5}) = true .
+     eq checkNorthviewC(CC) = false [owise] .
+
+     op checkNorthviewA1 : Config -> Bool .
+     op checkSumqi : Config -> Bool .
+     eq checkSumqi({S1 < IM, P > S2}) = if (lenS(S1) <= lenS(S2)) then true else false fi .
+     eq checkNorthviewA1(C) = if (c^m(C) == {empS}) or not checkSym(c^m(C)) then checkSumqi(C)
+     			      else if not greater(c^m(C), c-(cj(c^m(C)))) then true else false fi fi .
+
+     op checkCondition : Config -> Bool .
+     eq checkCondition(C) = (countSingleRobotG0N(C) + countSingleRobotG0S(C) == 0) .
+         
+endfm)
+
+
+(mod COLL-A-1 is
+     inc COLLECT-CALCULATION .
+     inc PENDING-MOVE .
+    
+     var C : Config .
+     vars S1 S2 : Seq .
+     vars I : Int .
+    
+     op checkC^Condition : Config -> Bool .
+     eq checkC^Condition(C) = (c^m(C) = c-(ck^m(C))) .
+
+   
+     crl [coll-a-1-fo1] : {S1 < I, nil > S2} => {S1 < I, FC- > S2}
+    	if checkNorthviewA1({< I, nil > S2 S1}) and checkC^Condition({< I, nil > S2 S1})
+	   and c^checkQ({< I, nil > S2 S1}) and  coll-a-1({S1 < I, nil > S2}) .
+     crl [coll-a-1-op1] : {S1 < I, nil > S2} => {S1 < I, FC > S2}
+    	if checkNorthviewA1({< I, nil > S2 S1}) and checkC^Condition({< I, nil > S2 S1})
+	   and not c^checkQ({< I, nil > S2 S1}) and  coll-a-1({S1 < I, nil > S2}) .    
+     crl [coll-a-1-op2] : {S1 < I, nil > S2} => {S1 < I, FC > S2}
+    	if checkNorthviewA1(viewOpp({< I, nil > S2 S1})) and checkC^Condition(viewOpp({< I, nil > S2 S1}))
+	   and c^checkQ(viewOpp({< I, nil > S2 S1})) and coll-a-1({S1 < I, nil > S2}) .    
+    crl [coll-a-1-fo2] : {S1 < I, nil > S2} => {S1 < I, FC- > S2}
+    	if checkNorthviewA1(viewOpp({< I, nil > S2 S1})) and checkC^Condition(viewOpp({< I, nil > S2 S1}))
+	   and not c^checkQ(viewOpp({< I, nil > S2 S1})) and coll-a-1({S1 < I, nil > S2}) .
+endm)
+
+ 
+*** (rew {< 0, nil > < 0, nil > < 1, nil > < 0, nil > < 3, nil > < 0, nil > < 1, nil > < 0, nil >} .)
+
+
+(mod COLL-S-2 is
+    inc COLLECT-CALCULATION .
+    inc PENDING-MOVE .
+    var C : Config .
+    vars S1 S2 : Seq .
+    var I : Int .
+    
+    op check1 : Config -> Bool .
+    eq check1(C) = (getQj-1(C) < 0) and (getLastQi(C) > 0) .
+    
+    op check2 : Config -> Bool .
+    eq check2(C) = (getSecondQi(C) < 0) and (getQ2(C) == 0) and (getQ4(C) == 0)
+       		   and (getQ5(C) < 0) and (getQj-2(C) >= 0).
+		   
+    op check3 : Config -> Bool .
+    eq check3(C) = (getSecondQi(C) < 0) and (getQj-1(C) >= 0) .
+     
+    op check4 : Config -> Bool .
+    eq check4(C) = (getQj-1(C) < 0) and (getLastQi(C) > 0) and (getQj-2(C) == getQj-3(C))
+       		   and (getQj-4(C) < 0).
+
+    *** rules
+    crl [coll-s-2-1-fo] : {S1 < I, nil > S2} => {S1 < I, FC- > S2}
+    	if checkNorthview({< I, nil > S2 S1}) and check1({< I, nil > S2 S1})
+	   and (checkSymNN({S1 < I, nil > S2}) or checkSymNE({S1 < I, nil > S2}))
+	   and coll-s-2({S1 < I, nil > S2}) .
+    crl [coll-s-2-1-op] : {S1 < I, nil > S2} => {S1 < I, FC > S2}
+    	if not checkNorthview({< I, nil > S2 S1}) and check1(viewOpp({< I, nil > S2 S1}))
+	   and (checkSymNN({S1 < I, nil > S2}) or checkSymNE({S1 < I, nil > S2}))
+	   and coll-s-2({S1 < I, nil > S2}) .
+    crl [coll-s-2-2-fo] : {S1 < I, nil > S2} => {S1 < I, FC > S2}
+    	if checkNorthview({< I, nil > S2 S1}) and check2({< I, nil > S2 S1})
+	   and (checkSymNN({S1 < I, nil > S2}) or checkSymNE({S1 < I, nil > S2}))
+	   and coll-s-2({S1 < I, nil > S2}) .
+    crl [coll-s-2-2-op] : {S1 < I, nil > S2} => {S1 < I, FC- > S2}
+    	if not checkNorthview({< I, nil > S2 S1}) and check2(viewOpp({< I, nil > S2 S1}))
+	   and (checkSymNN({S1 < I, nil > S2}) or checkSymNE({S1 < I, nil > S2}))
+	   and coll-s-2({S1 < I, nil > S2}) .
+    crl [coll-s-2-3-fo] : {S1 < I, nil > S2} => {S1 < I, FC > S2}
+    	if checkNorthview({< I, nil > S2 S1}) and check3({< I, nil > S2 S1})
+	   and checkSymRR({S1 < I, nil > S2}) and coll-s-2({S1 < I, nil > S2}) .
+    crl [coll-s-2-3-op] : {S1 < I, nil > S2} => {S1 < I, FC- > S2}
+    	if not checkNorthview({< I, nil > S2 S1}) and check3(viewOpp({< I, nil > S2 S1}))
+	   and checkSymRR({S1 < I, nil > S2}) and coll-s-2({S1 < I, nil > S2}) .
+    crl [coll-s-2-4-fo] : {S1 < I, nil > S2} => {S1 < I, FC- > S2}
+    	if checkNorthview({< I, nil > S2 S1}) and check4({< I, nil > S2 S1})
+	   and checkSymRR({S1 < I, nil > S2}) and coll-s-2({S1 < I, nil > S2}) .
+    crl [coll-s-2-4-op] : {S1 < I, nil > S2} => {S1 < I, FC > S2}
+    	if not checkNorthview({< I, nil > S2 S1}) and check4(viewOpp({< I, nil > S2 S1}))
+	   and checkSymRR({S1 < I, nil > S2}) and coll-s-2({S1 < I, nil > S2}) .
+        
+endm)
+
+(mod COLL-A-2 is
+    inc COLLECT-CALCULATION .
+    inc PENDING-MOVE .
+    var C : Config .
+    vars P P1 P2 : Pending .
+    vars S S1 S2 : Seq .
+    vars I I1 I2 : Int .   
+
+    op getSymConfig1 : Config -> Config .
+    eq getSymConfig1({< I1, P1 > S < I2 , P2 >}) = {< I1 + 1, P1 > S} .
+
+    op getSymConfig2 : Config -> Config .
+    eq getSymConfig2({< I1, P1 > S < I2 , P2 >}) = {< I1 + 1, P1 > S < I2 - 1, P2 >} .
+
+    op getSymConfig3 : Config -> Config .
+    eq getSymConfig3({< I1, P1 > S < I2 , P2 >}) = {S < I2 + 1, P2 >} .
+    
+    op getSymConfig4 : Config -> Config .
+    eq getSymConfig4({< I1, P1 > S < I2 , P2 >}) = {< I1 - 1, P1 > S < I2 + 1, P2 >} .
+    
+    op checkA1 : Config -> Bool .
+    eq checkA1(C) = (getQj-1(C) < 0) and ((getLastQi(C) == 0 and checkAllowedSym(getSymConfig1(C)))
+       		    or (getLastQi(C) > 0 and checkAllowedSym(getSymConfig2(C)))) .
+      
+    op checkA2 : Config -> Bool .
+    eq checkA2(C) = getSecondQi(C) < 0 and ((getFirstQi(C) == 0 and checkAllowedSym(getSymConfig3(C)))
+       		    or (getFirstQi(C) > 0 and checkAllowedSym(getSymConfig4(C)))) .
+    *** Rules    
+    crl [coll-a-2-1-fo] : {S1 < I, nil > S2} => {S1 < I, FC- > S2}
+    	if checkNorthview({< I, nil > S2 S1}) and checkA1({< I, nil > S2 S1})
+	   and coll-a-2({S1 < I, nil > S2}) .
+    crl [coll-a-2-1-op] : {S1 < I, nil > S2} => {S1 < I, FC > S2}
+    	if not checkNorthview({< I, nil > S2 S1}) and checkA1(viewOpp({< I, nil > S2 S1}))
+	   and coll-a-2({S1 < I, nil > S2}) .
+    crl [coll-a-2-1-fo] : {S1 < I, nil > S2} => {S1 < I, FC > S2}
+    	if checkNorthview({< I, nil > S2 S1}) and checkA2({< I, nil > S2 S1})
+	   and coll-a-2({S1 < I, nil > S2}) .
+    crl [coll-a-2-1-op] : {S1 < I, nil > S2} => {S1 < I, FC- > S2}
+    	if not checkNorthview({< I, nil > S2 S1}) and checkA2(viewOpp({< I, nil > S2 S1}))
+	   and coll-a-2({S1 < I, nil > S2}) .
+    
+endm)
+
+
+*** Phase MULTIPILICITY-CREATION
+(mod MULTIPILICITY-CREATION is
+    pr W1-MOVE .
+    pr W4-MOVE .
+    pr W5-MOVE .
+    pr W6-MOVE .	
+    pr W7-MOVE .
+    pr PENDING-MOVE .
+endm)
+
+
+*** Phase COLLECT 
+(mod COLLECT is
+    inc COLL-A-1 .
+    inc COLL-A-2 .
+    inc COLL-S-2 .
+endm)
+
+
+
+*** Gathering Algorithm
+(mod GATHERING is
+    inc MULTIPILICITY-CREATION .
+    inc COLLECT .
+endm)
+
+
+***
+*** Model Checking of  the Algorithm
+***
+
+*** State Predicates
+(mod GATHERING-PREDS is
+    inc GATHERING .
+    inc SATISFACTION .
+    subsort Config < State .
+
+    op coll :  -> Prop .
+    op checkColl : Config -> Bool .
+
+    var C : Config .
+     
+    eq C |= coll = checkColl(C) .
+    eq checkColl({empS}) = false .
+    eq checkColl(C) = checkAllowedSym(C) and (numMul(C) == 2) and checkCondition(C) [owise] .
+endm)
+
+
+
+*** LTL formulas
+(mod GATHERING-CHECK is
+    pr GATHERING-PREDS .
+    inc MODEL-CHECKER .
+    inc LTL-SIMPLIFIER .
+
+    op lemma2 : -> Formula .    
+    eq lemma2 = ([]<> coll) .
+endm)
+
+*** Experiments
+(mod EXPERIMENT is
+    inc GATHERING-CHECK .
+    
+    op init1 : -> Config .
+    eq init1 = {< 1, nil > < 1, nil > < 2, nil > < 0, nil > < 2, nil >} .
+
+    op init2 : -> Config .
+    eq init2 = {< 4, nil > < 0, nil > < 0, nil > < 4, nil >} .
+
+    op init3 : -> Config .
+    eq init3 = {< 1, nil > < 1, nil > < 2, nil > < 3, nil > < 2, nil > < 1, nil > < 1, nil > < 0, nil >} .
+
+    op init4 : -> Config .
+    eq init4 = {< 0, nil > < 1, nil > < 1, nil > < 3, nil > < 1, nil > < 1, nil > < 0, nil > < 0, nil >} .
+    
+    op init5 : -> Config .
+    eq init5 = {< 0, nil > < 1, nil > < 2, nil > < 0, nil > < 3, nil > < 0, nil > < 2, nil > < 1, nil >} .
+    
+    op init6 : -> Config .
+    eq init6 = {< 0, nil > < 0, nil > < 1, nil > < 3, nil > < 1, nil > < 0, nil > < 0, nil > < 2, nil >} .
+    
+    op init7 : -> Config .
+    eq init7 = {< 0, nil > < 0, nil > < 1, nil > < 0, nil > < 3, nil > < 0, nil > < 1, nil > < 0, nil >} .
+    
+    op init8 : -> Config .
+    eq init8 = {< 0, nil > < 1, nil > < 1, nil > < 3, nil > < 2, nil > < 2, nil > < 1, nil > < 1, nil >} .
+    
+    op init9 : -> Config .
+    eq init9 = {< 0, nil > < 1, nil > < 2, nil > < 2, nil > < 1, nil > < 1, nil > < 0, nil > < 0, nil >} .
+    
+    op init10 : -> Config .
+    eq init10 = {< 4, nil > < 4, nil > < 4, nil > < 3, nil > < 4, nil > < 4, nil > < 4, nil > < 4, nil >} .
+    
+    op init11 : -> Config .
+    eq init11 = {< 4, nil > < 4, nil > < 5, nil > < 2, nil > < 4, nil > < 4, nil > < 4, nil > < 4, nil >} .
+    
+    op init12 : -> Config .
+    eq init12 = {< 0, nil > < 2, nil > < 1, nil > < 2, nil > < 0, nil > < 3, nil > < 1, nil > < 3, nil >} .
+    
+    op init13 : -> Config .
+    eq init13 = {< 0, nil > < 4, nil > < 2, nil > < 3, nil > < 2, nil > < 3, nil > < 1, nil > < 2, nil >} .
+
+endm)
+
+ (red modelCheck(init5, lemma2) .)
+eof
+
+
+    
