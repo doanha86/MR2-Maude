@@ -49,6 +49,18 @@ For example,
 The module `SIMPLE-RING` above defines the operator `<_>` as the wrapper of a sequence
 that behaves as a bi-directional ring.
 
+Examples
+--------
+
+The folder **src/examples** contains several examples that can be directly used to
+get a glimpse of how RSE-Maude works. In order to execute them, just start RSE-Maude
+as indicated in the previous section. Then, go to the **examples** folder
+
+    $ cd examples/
+
+and load any of the files. For example, the **exploration.maude** file presents
+how to model check the exploration property.
+
 More information
 ----------------
 
